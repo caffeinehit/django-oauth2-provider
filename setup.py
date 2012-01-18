@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+from setuptools import setup, find_packages
+import provider
+
+setup(
+    name='django-oauth2-provider',
+    version=provider.__version__,
+    description='Provide OAuth2 access to your app',
+    long_description=open('README.rst').read(),
+    author='Alen Mujezinovic',
+    author_email='alen@caffeinehit.com',
+    packages= filter(
+        lambda package: not package.startswith('testproject'), find_packages()),
+    classifiers=[
+        'Environment :: Web Environment',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Framework :: Django',
+    ],
+    install_requires=[
+        
+    ],
+    include_package_data=True,
+    zip_safe=False,
+)
