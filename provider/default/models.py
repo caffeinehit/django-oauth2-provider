@@ -1,0 +1,32 @@
+from django.contrib.auth.models import User
+from django.db import models
+from provider.constants import CLIENT_TYPES
+from provider.utils import short_token, long_token, get_token_expiry, \
+    get_code_expiry
+import json
+
+class Client(models.Model):
+    user = models.ForeignKey(User)
+    url = models.URLField(help_text = "Your application's URL.")
+    callback_url = models.URLField(help_text = "Your application's callback URL")
+    client_id = models.CharField(max_length = 255, default = short_token)
+    client_secret = models.CharField(max_length = 255, default = long_token)
+    client_type = models.IntegerField(choices = CLIENT_TYPES)
+
+class AuthorizationCode(models.Model):
+    user = models.ForeignKey(User)
+    client = models.ForeignKey(Client)
+    code = models.CharField(max_length = 255, default = long_token)
+    expires = models.DateTimeField(default = get_code_expiry)
+    
+class RefreshToken(models.Model):
+    user = models.ForeignKey(User)
+    token = models.CharField(max_length = 255, default = long_token)
+    client = models.ForeignKey(Client)
+
+class AccessToken(models.Model):
+    user = models.ForeignKey(User)
+    token = models.CharField(max_length = 255, default = short_token)
+    client = models.ForeignKey(Client)
+    expires = models.DateTimeField(default = get_token_expiry)
+    scope = models.CharField(max_length = 255, blank = True)

@@ -1,0 +1,2 @@
+class AccessToken(object):
+    pass
