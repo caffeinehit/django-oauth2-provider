@@ -1,0 +1,62 @@
+[
+    {
+        "fields": {
+            "redirect_uri": "http://example.com/application/1/", 
+            "client_id": "90a4a24ffefe7ebbae2c", 
+            "client_secret": "35c25066023f32c4f098d1e40de94f07f98c1acf", 
+            "client_type": 0, 
+            "url": "http://example.com/", 
+            "user": 1
+        }, 
+        "model": "oauth2.client", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "redirect_uri": "http://example.com/application/2/", 
+            "client_id": "71fbc29950ac1b386a12", 
+            "client_secret": "1944b695ca0cbf4f419a7d5c7e4fed13a660bc04", 
+            "client_type": 0, 
+            "url": "http://example.com/", 
+            "user": 2
+        }, 
+        "model": "oauth2.client", 
+        "pk": 2
+    }, 
+    {
+        "fields": {
+            "date_joined": "2012-01-23 05:44:17", 
+            "email": "test-1@example.com", 
+            "first_name": "", 
+            "groups": [], 
+            "is_active": true, 
+            "is_staff": true, 
+            "is_superuser": true, 
+            "last_login": "2012-01-23 05:52:32", 
+            "last_name": "", 
+            "password": "sha1$da29e$498b9faab2d002183bc1d874689634b0e15ad6d7", 
+            "user_permissions": [], 
+            "username": "test-user-1"
+        }, 
+        "model": "auth.user", 
+        "pk": 1
+    }, 
+    {
+        "fields": {
+            "date_joined": "2012-01-23 05:53:31", 
+            "email": "", 
+            "first_name": "", 
+            "groups": [], 
+            "is_active": true, 
+            "is_staff": false, 
+            "is_superuser": false, 
+            "last_login": "2012-01-23 05:53:31", 
+            "last_name": "", 
+            "password": "sha1$0cf1b$d66589690edd96b410170fcae5cc2bdfb68821e7", 
+            "user_permissions": [], 
+            "username": "test-user-2"
+        }, 
+        "model": "auth.user", 
+        "pk": 2
+    }
+]

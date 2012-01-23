@@ -1,10 +1,14 @@
+from datetime import datetime
 from django import forms
 from django.utils.translation import ugettext_lazy as _
-from provider.constants import CONFIDENTIAL, ENFORCE_CLIENT_SECURE, \
-     SCOPES, RESPONSE_TYPE_CHOICES
-from provider.default.models import Client
+from provider.constants import CONFIDENTIAL, ENFORCE_CLIENT_SECURE, SCOPES, \
+    RESPONSE_TYPE_CHOICES
+from provider.forms import OAuthValidationError, OAuthForm
+from provider.oauth2.models import Client, Grant
 from provider.utils import get_client, get_redirect_uri
 import urlparse
+
+
 
 class ClientAuthForm(forms.Form):
     client_id = forms.CharField()
@@ -13,8 +17,8 @@ class ClientAuthForm(forms.Form):
     def clean(self):
         data = self.cleaned_data
         try:
-            client = Client.objects.get(client_id = data.get('client_id'),
-                client_secret = data.get('client_secret'))
+            client = Client.objects.get(client_id=data.get('client_id'),
+                client_secret=data.get('client_secret'))
         except Client.DoesNotExist:
             raise forms.ValidationError(_("Client could not be validated with key pair."))
 
@@ -24,20 +28,20 @@ class ClientAuthForm(forms.Form):
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ('url', 'client_type', 'callback_url', )
+        fields = ('url', 'client_type', 'redirect_uri',)
         
     def clean(self):
         data = self.cleaned_data
 
         confidential = data['client_type'] == CONFIDENTIAL        
-        https = urlparse.urlparse(data['callback_url']).scheme == 'https'
+        https = urlparse.urlparse(data['redirect_uri']).scheme == 'https'
         
         if ENFORCE_CLIENT_SECURE and not https:
             raise forms.ValidationError(_("Your callback URL must be secure."))
 
         return data
     
-class AuthorizationRequestForm(forms.ModelForm):
+class AuthorizationRequestForm(OAuthForm):
     """
     This form is used to validate the request data that the authorization 
     endpoint receives from clients.
@@ -51,10 +55,13 @@ class AuthorizationRequestForm(forms.ModelForm):
     :param scope: The scope that the authorization should include.
     :param state: Opaque - just pass back to client for validation.
     """
-    response_type = forms.CharField()
-    redirect_uri = forms.URLField(required = False)
-    scope = forms.CharField(required = False)
-    state = forms.CharField(required = False)
+    # Setting all required fields to falls to explicitly check by hand
+    # and use custom error messages that can be reused in the OAuth2
+    # protocol
+    response_type = forms.CharField(required=False)
+    redirect_uri = forms.URLField(required=False)
+    scope = forms.CharField(required=False)
+    state = forms.CharField(required=False)
     
     def __init__(self, *args, **kwargs):
         """
@@ -68,11 +75,17 @@ class AuthorizationRequestForm(forms.ModelForm):
         :rfc 3.1.1: Lists of values are space delimited.
         """
         response_type = self.cleaned_data.get('response_type')
+        
+        if not response_type:
+            raise OAuthValidationError({'error': 'invalid_request',
+                'error_description': "No 'response_type' supplied."})
+
         types = response_type.split(" ")
         
         for type in types:
             if type not in RESPONSE_TYPE_CHOICES:
-                raise forms.ValidationError(u"'%s' is not a valid response_type." % type)
+                raise OAuthValidationError({'error': 'unsupported_response_type',
+                    'error_description': u"'%s' is not a supported response type." % type})
         
         return response_type
 
@@ -85,7 +98,8 @@ class AuthorizationRequestForm(forms.ModelForm):
 
         if redirect_uri:
             if not redirect_uri == self.client.redirect_uri:
-                raise forms.ValidationError(_(u"'redirect_uri' doesn't match the 'client_id'."))
+                raise OAuthValidationError({'error': 'invalid_request',
+                    'error_description': _("The requested redirect didn't match the client settings.")})
         
         return redirect_uri        
         
@@ -96,11 +110,16 @@ class AuthorizationRequestForm(forms.ModelForm):
             different scope.
         """
         scope = self.cleaned_data.get('scope')
+
+        if not scope:
+            return ''
+        
         scope = scope.split(' ')
         
         for s in scope:
             if s not in SCOPES:
-                raise forms.ValidationError(_(u"'%s' is not a valid scope.") % s)
+                raise OAuthValidationError({'error': 'invalid_scope',
+                    'error_description': _("'%s' is not a valid scope." % s)})
     
         return u' '.join(scope)
     
@@ -108,6 +127,34 @@ class AuthorizationForm(forms.Form):
     """
     A form used to ask the resource owner for authorization of a given client.
     """
-    authorize = forms.BooleanField(initial = False)
-    scope = forms.MultipleChoiceField()
+    authorize = forms.BooleanField(required=False)
+    #authorize = forms.BooleanField(initial = False, required = True)
+    #scope = forms.MultipleChoiceField(required = True)
     
+    def save(self, **kwargs):
+        authorize = self.cleaned_data.get('authorize')
+
+        if not authorize:
+            return None
+        
+        grant = Grant()
+        return grant
+    
+class GrantForm(OAuthForm):
+    """
+    Check and return a grant
+    """
+    code = forms.CharField()
+    
+    def __init__(self, *args, **kwargs):
+        self.client = kwargs.pop('client')
+        super(GrantForm, self).__init__(*args, **kwargs)
+    
+    def clean_code(self):
+        code = self.cleaned_data.get('code')
+        try:
+            self.cleaned_data['grant'] = Grant.objects.get(
+                code=code, client=self.client, expires__gt=datetime.now())
+        except Grant.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_grant'})
+        return code

@@ -1,6 +1,6 @@
 from datetime import datetime
-from provider.default.forms import ClientAuthForm
-from provider.default.models import Client, AccessToken
+from provider.oauth2.forms import ClientAuthForm
+from provider.oauth2.models import Client, AccessToken
 
 class BasicClientBackend(object):
     """
@@ -44,21 +44,6 @@ class RequestParamsClientBackend(object):
         return None
         
         
-
-class ClientBackend(object):
-    """
-    Backend to authenticate OAuth2 clients for our services.
-    
-    Subclasses can override the :method:`authenticate` to authenticate against
-    any query parameter our service received.
-    """
-    
-    def authenticate(self, client_id = None, client_secret = None, **kwargs):
-        try:
-            return Client.objects.get(client_id = client_id, client_secret = client_secret)
-        except Client.DoesNotExist:
-            return None
-
 class AccessTokenBackend(object):
     """ Authenticate a user via access token and client object."""
     
