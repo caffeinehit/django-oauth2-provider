@@ -23,6 +23,7 @@ class Grant(models.Model):
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
+    scope = models.CharField(max_length=255, blank=True)
     
     def __unicode__(self):
         return self.code
@@ -30,6 +31,7 @@ class Grant(models.Model):
 class RefreshToken(models.Model):
     user = models.ForeignKey(User)
     token = models.CharField(max_length=255, default=long_token)
+    grant = models.ForeignKey(Grant)
     client = models.ForeignKey(Client)
     
     def __unicode__(self):

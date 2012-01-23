@@ -287,7 +287,6 @@ class AccessToken(View, Mixin):
         return HttpResponse(
             json.dumps({
                 'access_token': at.token,
-                'token_type': at.type,
                 'expires_in': at.get_expire_delta(),
                 'refresh_token': rt.token,
                 'scope': at.scope

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.http import QueryDict
 from django.test import TestCase
 from django.utils.html import escape
 from provider import constants
@@ -198,6 +199,23 @@ class AccessTokenTest(TestCase, Mixin):
         self.assertEqual(403, response.status_code, response.content)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
 
+    def test_fetching_access_token_with_valid_grant(self):
+        self.login()
+        self._login_and_authorize()
+        
+        response = self.client.get(self.redirect_url())
+        
+        query = QueryDict(urlparse.urlparse(response['Location']).query)
+        code = query['code']
+        
+        response = self.client.post(self.access_token_url(), {
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+        
+        self.assertEqual(200, response.status_code, response.content)
+
+        
 
 class EnforceSecureTest(TestCase, Mixin):
     fixtures = ['test_oauth2']
