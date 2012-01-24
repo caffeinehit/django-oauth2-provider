@@ -301,3 +301,9 @@ class EnforceSecureTest(TestCase):
         self.assertEqual(400, response.status_code)
         self.assertTrue("A secure connection is required." in response.content)
         
+    def test_access_token_enforces_SSL(self):
+        response = self.client.post(self.access_token_url(), {})
+
+        self.assertEqual(400, response.status_code)
+        self.assertTrue("A secure connection is required." in response.content)
+        
