@@ -7,6 +7,10 @@ class OAuthForm(forms.Form):
     """
     Custom form class that creates shallow error dicts.
     """
+    def __init__(self, *args, **kwargs):
+        self.client = kwargs.pop('client', None)
+        super(OAuthForm, self).__init__(*args, **kwargs)
+        
     def _clean_fields(self):
         """
         Overriding the default cleaning behaviour to exit early on errors instead

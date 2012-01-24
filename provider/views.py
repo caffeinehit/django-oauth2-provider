@@ -1,11 +1,20 @@
 # Create your views here.
 from django.http import HttpResponseBadRequest, HttpResponse, \
     HttpResponseRedirect, HttpResponseForbidden, QueryDict
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView, View
 from provider import constants
 import json
 import urlparse
+
+class OAuthView(TemplateView):
+    """ Overriding dispatch method to add no caching headers to each 
+    response. """
+    def dispatch(self, request, *args, **kwargs):
+        response = super(OAuthView, self).dispatch(request, *args, **kwargs)
+        response['Cache-Control'] = 'no-store'
+        response['Pragma'] = 'no-cache'
+        return response
 
 class Mixin(object):
     """
@@ -21,7 +30,7 @@ class Mixin(object):
         for key in request.session.keys():
             if key.startswith(constants.SESSION_KEY):
                 del request.session[key]
-    
+
     def authenticate(self, request):
         """
         Authenticate a client against all the backends configured in 
@@ -32,10 +41,8 @@ class Mixin(object):
             if client is not None:
                 return client
         return None
-    
 
-
-class Capture(TemplateView, Mixin):
+class Capture(OAuthView, Mixin):
     """
     As stated in section 3.1.2.5 this view captures all the request 
     parameters and redirects to another URL to avoid any leakage of request
@@ -67,17 +74,17 @@ class Capture(TemplateView, Mixin):
                 'next': None},
                 status=400)
 
-        return HttpResponseRedirect(self.get_redirect_url(request))
+        return HttpResponseRedirect(self.get_redirect_url(request)) 
+        
         
     def get(self, request):
         return self.handle(request, request.GET)
 
     def post(self, request):
-        return self.handle(request, request.POST)
-    
+        return self.handle(request, request.POST)    
 
 
-class Authorize(TemplateView, Mixin):
+class Authorize(OAuthView, Mixin):
     template_name = 'provider/authorize.html'
     
     def get_redirect_url(self, request):
@@ -171,7 +178,7 @@ class Authorize(TemplateView, Mixin):
         client, data = self._validate_client(request, data)
 
         if not client:
-            return self.error_response(request, data, status=403)   
+            return self.error_response(request, data, status=400)
 
 
         authorization_form = self.get_authorization_form(request, client, post_data,
@@ -199,7 +206,7 @@ class Authorize(TemplateView, Mixin):
         
       
     
-class Redirect(TemplateView, Mixin):
+class Redirect(OAuthView, Mixin):
     """
     Redirect the user back to the client.
     """
@@ -233,7 +240,7 @@ class Redirect(TemplateView, Mixin):
                 
         return HttpResponseRedirect(redirect_uri)        
 
-class AccessToken(View, Mixin):    
+class AccessToken(OAuthView, Mixin):    
     """
     According to the RFC this endpoint too must require the use of secure 
     communication.
@@ -245,6 +252,7 @@ class AccessToken(View, Mixin):
     """
     
     authentication = ()
+    grant_types = ['authorization_code', 'refresh_token']
     
     def get_grant(self, request, data, client):
         """
@@ -253,45 +261,153 @@ class AccessToken(View, Mixin):
         """
         raise NotImplementedError
     
-    def create_access_token(self, request, grant, client):
+    def get_refresh_token(self, request, data, client):
+        """
+        Return the refresh token associated with this request, or an error dict.
+        :return tuple: ``(True or False, token or error_dict)``
+        """
         raise NotImplementedError
     
-    def create_refresh_token(self, request, grant, access_token, client):
+    def create_access_token(self, request, user, scope, client):
+        """
+        Override to handle access token creation.
+        
+        :return obj: Access token
+        """
+        raise NotImplementedError
+    
+    def create_refresh_token(self, request, user, scope, access_token, client):
+        """
+        Override to handle refresh token creation.
+        
+        :return obj: Refresh token
+        """
         raise NotImplementedError
     
     def invalidate_grant(self, grant):
+        """
+        Override to handle grant invalidation. A grant is invalidated right after
+        creating an access token from it.
+        
+        :return None:
+        """
         raise NotImplementedError
     
-    def error_response(self, error, mimetype='application/json', status=403, **kwargs):
-        return HttpResponse(json.dumps(error), mimetype=mimetype, status=status, **kwargs)
+    def invalidate_refresh_token(self, refresh_token):
+        """
+        Override to handle refresh token invalidation. When requesting a new
+        access token from a refresh token, the old one is *always* invalidated.
+        
+        :return None:
+        """
+        raise NotImplementedError
     
-    def post(self, request):
-        if constants.ENFORCE_SECURE and not request.is_secure():
-            return HttpResponseBadRequest()
-
-        client = self.authenticate(request)
+    def invalidate_access_token(self, access_token):
+        """
+        Override to handle access token invalidation. When a new access token
+        is created from a refresh token, the old one is *always* invalidated.
         
-        if client is None:
-            return self.error_response({'error': 'invalid_client'})
-        
+        :return None:
+        """
+        raise NotImplementedError
+    
+    def error_response(self, error, mimetype='application/json', status=400, **kwargs):
+        return HttpResponse(json.dumps(error), mimetype=mimetype, status=status, **kwargs)        
+    
+    def access_token_response(self, access_token):
+        return HttpResponse(
+            json.dumps({
+                'access_token': access_token.token,
+                'expires_in': access_token.get_expire_delta(),
+                'refresh_token': access_token.refresh_token.token,
+                'scope': access_token.scope
+            }), mimetype='application/json'
+        )
+    
+    def authorization_code(self, request, data, client):
+        """
+        Handle ``grant_type=authorization_token`` requests.
+        """
         valid, grant_or_error = self.get_grant(request, request.POST, client)
         
         if not valid:
             return self.error_response(grant_or_error)
         
-        at = self.create_access_token(request, grant_or_error, client)
-        rt = self.create_refresh_token(request, grant_or_error, at, client)
+        grant = grant_or_error
+        
+        at = self.create_access_token(request, grant.user, grant.scope, client)
+        rt = self.create_refresh_token(request, grant.user, grant.scope, at, client)
         
         self.invalidate_grant(grant_or_error)
         
-        return HttpResponse(
-            json.dumps({
-                'access_token': at.token,
-                'expires_in': at.get_expire_delta(),
-                'refresh_token': rt.token,
-                'scope': at.scope
-            }), mimetype='application/json'
-        )
+        return self.access_token_response(at)        
+        
+        
+    def refresh_token(self, request, data, client):
+        """
+        Handle ``grant_type=refresh_token`` requests.
+        """
+        valid, token_or_error = self.get_refresh_token(request, data, client)
+        
+        if not valid:
+            return self.error_response(token_or_error)
+        
+        rt = token_or_error
+        
+        self.invalidate_refresh_token(rt)
+        self.invalidate_access_token(rt.access_token)
+        
+        at = self.create_access_token(request, rt.user, rt.access_token.scope, client)
+        rt = self.create_refresh_token(request, at.user, at.scope, at, client)
+        
+        return self.access_token_response(at)
+        
+    def get_handler(self, grant_type):
+        """
+        Return a function or method that is capable handling the 'grant_type'
+        requested by the client.
+        """
+        if grant_type == 'authorization_code':
+            return self.authorization_code
+        elif grant_type == 'refresh_token':
+            return self.refresh_token
+        return None
+    
+    def get(self, request):
+        """
+        As per :rfc 3.2: the token endpoint *only* supports POST requests.
+        """
+        return self.error_response({'error': 'invalid_request',
+            'error_description': _("Only POST requests allowed.")})
+    
+    def post(self, request):
+        """
+        As per :rfc 3.2: the token endpoint *only* supports POST requests.
+        """
+        if constants.ENFORCE_SECURE and not request.is_secure():
+            return self.error_response({'error': 'invalid_request',
+                'error_description': _("A secure connection is required.")})
+
+        if not 'grant_type' in request.POST:
+            return self.error_response({'error': 'invalid_request',
+                'error_description': _("No 'grant_type' included in the request.")})
+            
+        grant_type = request.POST['grant_type']
+        
+        if grant_type not in self.grant_types:
+            return self.error_response({'error': 'unsupported_grant_type'})
+    
+        client = self.authenticate(request)
+        
+        if client is None:
+            return self.error_response({'error': 'invalid_client'})
+        
+        handler = self.get_handler(grant_type)
+        
+        return handler(request, request.POST, client)
+        
+        
+
 
     
         

@@ -32,7 +32,7 @@ class Mixin(object):
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
         
-        response = self.client.post(self.auth_url2(), {'authorize': True})
+        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
 
@@ -66,7 +66,7 @@ class AuthorizationTest(TestCase, Mixin):
         response = self.client.get(self.auth_url())
         response = self.client.get(self.auth_url2())
         
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue("An unauthorized client tried to access your resources." in response.content)
 
     def test_authorization_rejects_invalid_client_id(self):
@@ -74,7 +74,7 @@ class AuthorizationTest(TestCase, Mixin):
         response = self.client.get(self.auth_url() + '?client_id=123')
         response = self.client.get(self.auth_url2())
         
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue("An unauthorized client tried to access your resources." in response.content)
 
     def test_authorization_requires_response_type(self):
@@ -82,7 +82,7 @@ class AuthorizationTest(TestCase, Mixin):
         response = self.client.get(self.auth_url() + '?client_id=%s' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
         
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"No 'response_type' supplied.") in response.content)
         
     def test_authorization_requires_supported_response_type(self):
@@ -90,7 +90,7 @@ class AuthorizationTest(TestCase, Mixin):
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
 
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
@@ -109,7 +109,7 @@ class AuthorizationTest(TestCase, Mixin):
             self.get_client().redirect_uri + '-invalid'))
         response = self.client.get(self.auth_url2())
         
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
         
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
@@ -125,7 +125,7 @@ class AuthorizationTest(TestCase, Mixin):
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
         
-        self.assertEqual(403, response.status_code)
+        self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content)
         
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
@@ -140,7 +140,7 @@ class AuthorizationTest(TestCase, Mixin):
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
         
-        response = self.client.post(self.auth_url2(), {'authorize': False})
+        response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
         
@@ -181,10 +181,11 @@ class AccessTokenTest(TestCase, Mixin):
         self._login_and_authorize()
         
         response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
             'client_id': self.get_client().client_id + '123',
             'client_secret': self.get_client().client_secret, })
         
-        self.assertEqual(403, response.status_code, response.content)
+        self.assertEqual(400, response.status_code, response.content)
         self.assertEqual('invalid_client', json.loads(response.content)['error'])
         
     def test_fetching_access_token_with_invalid_grant(self):
@@ -192,31 +193,77 @@ class AccessTokenTest(TestCase, Mixin):
         self._login_and_authorize()
         
         response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
             'client_id': self.get_client().client_id,
             'client_secret': self.get_client().client_secret,
             'code': '123'})
         
-        self.assertEqual(403, response.status_code, response.content)
+        self.assertEqual(400, response.status_code, response.content)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
 
-    def test_fetching_access_token_with_valid_grant(self):
+    def _login_authorize_get_token(self):
         self.login()
         self._login_and_authorize()
         
+        response = self.client.get(self.redirect_url())
+        query = QueryDict(urlparse.urlparse(response['Location']).query)
+        code = query['code']
+        
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+        
+        self.assertEqual(200, response.status_code, response.content)
+        
+        return json.loads(response.content)
+    
+    def test_fetching_access_token_with_valid_grant(self):
+        self._login_authorize_get_token()        
+        
+    def test_fetching_access_token_with_invalid_grant_type(self):
+        self.login()
+        self._login_and_authorize()
         response = self.client.get(self.redirect_url())
         
         query = QueryDict(urlparse.urlparse(response['Location']).query)
         code = query['code']
         
         response = self.client.post(self.access_token_url(), {
+            'grant_type': 'invalid_grant_type',
             'client_id': self.get_client().client_id,
             'client_secret': self.get_client().client_secret,
-            'code': code})
+            'code': code
+        })
         
-        self.assertEqual(200, response.status_code, response.content)
-
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'],
+            response.content)
         
+    def test_refreshing_an_access_token(self):
+        token = self._login_authorize_get_token()
+        
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': token['refresh_token'],
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+        
+        self.assertEqual(200, response.status_code)
 
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': token['refresh_token'],
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+        
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('invalid_grant', json.loads(response.content)['error'],
+            response.content)
+        
 class EnforceSecureTest(TestCase, Mixin):
     fixtures = ['test_oauth2']
 

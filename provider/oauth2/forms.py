@@ -1,14 +1,13 @@
 from datetime import datetime
 from django import forms
 from django.utils.translation import ugettext_lazy as _
+from provider import constants
 from provider.constants import CONFIDENTIAL, ENFORCE_CLIENT_SECURE, SCOPES, \
     RESPONSE_TYPE_CHOICES
 from provider.forms import OAuthValidationError, OAuthForm
-from provider.oauth2.models import Client, Grant
+from provider.oauth2.models import Client, Grant, RefreshToken
 from provider.utils import get_client, get_redirect_uri
 import urlparse
-
-
 
 class ClientAuthForm(forms.Form):
     client_id = forms.CharField()
@@ -62,13 +61,6 @@ class AuthorizationRequestForm(OAuthForm):
     redirect_uri = forms.URLField(required=False)
     scope = forms.CharField(required=False)
     state = forms.CharField(required=False)
-    
-    def __init__(self, *args, **kwargs):
-        """
-        :param client: **required** The currently authenticated client.
-        """
-        self.client = kwargs.pop('client')
-        super(AuthorizationRequestForm, self).__init__(*args, **kwargs)
     
     def clean_response_type(self):
         """
@@ -128,8 +120,13 @@ class AuthorizationForm(forms.Form):
     A form used to ask the resource owner for authorization of a given client.
     """
     authorize = forms.BooleanField(required=False)
-    #authorize = forms.BooleanField(initial = False, required = True)
-    #scope = forms.MultipleChoiceField(required = True)
+    scope = forms.MultipleChoiceField(choices=[(c, c) for c in constants.SCOPES],
+        required=True)
+
+    def clean_scope(self):
+        scope = self.cleaned_data.get('scope')
+        
+        return ' '.join(scope)
     
     def save(self, **kwargs):
         authorize = self.cleaned_data.get('authorize')
@@ -139,17 +136,30 @@ class AuthorizationForm(forms.Form):
         
         grant = Grant()
         return grant
+
+class RefreshTokenForm(OAuthForm):
+    """
+    Check and return a refresh token
+    """
+    refresh_token = forms.CharField()
+    
+    def clean_refresh_token(self):
+        token = self.cleaned_data.get('refresh_token')
+        
+        try:
+            token = RefreshToken.objects.get(token=token,
+                expired=False, client=self.client)
+        except RefreshToken.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_grant'})
+        
+        return token
     
 class GrantForm(OAuthForm):
     """
     Check and return a grant
     """
     code = forms.CharField()
-    
-    def __init__(self, *args, **kwargs):
-        self.client = kwargs.pop('client')
-        super(GrantForm, self).__init__(*args, **kwargs)
-    
+
     def clean_code(self):
         code = self.cleaned_data.get('code')
         try:

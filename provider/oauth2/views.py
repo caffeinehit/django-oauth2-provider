@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.core.urlresolvers import reverse
 from provider.oauth2.auth import BasicClientBackend, RequestParamsClientBackend
 from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm, \
-    GrantForm
+    GrantForm, RefreshTokenForm
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.views import Capture, Authorize, Redirect, \
     AccessToken as AccessTokenView
@@ -56,22 +56,27 @@ class AccessTokenView(AccessTokenView, Mixin):
     
     def get_grant(self, request, data, client):
         form = GrantForm(data, client=client)
-        
         if form.is_valid():
             return True, form.cleaned_data.get('grant')
         return False, form.errors
+
+    def get_refresh_token(self, request, data, client):
+        form = RefreshTokenForm(data, client=client)
+        if form.is_valid():
+            return True, form.cleaned_data.get('refresh_token')
+        return False, form.errors
         
-    def create_access_token(self, request, grant, client):
+    def create_access_token(self, request, user, scope, client):
         return AccessToken.objects.create(
-            user=grant.user,
+            user=user,
             client=client,
-            scope=grant.scope
+            scope=scope
         )
             
-    def create_refresh_token(self, request, grant, access_token, client):
+    def create_refresh_token(self, request, user, scope, access_token, client):
         return RefreshToken.objects.create(
-            user=grant.user,
-            grant=grant,
+            user=user,
+            access_token=access_token,
             client=client
         )
     
@@ -79,3 +84,11 @@ class AccessTokenView(AccessTokenView, Mixin):
         grant.expires = datetime.now() - timedelta(days=1)
         grant.save()
         
+    def invalidate_refresh_token(self, rt):
+        rt.expired = True
+        rt.save()
+        
+    
+    def invalidate_access_token(self, at):
+        at.expires = datetime.now() - timedelta(days=1)
+        at.save()

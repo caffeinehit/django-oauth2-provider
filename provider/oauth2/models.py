@@ -28,15 +28,6 @@ class Grant(models.Model):
     def __unicode__(self):
         return self.code
     
-class RefreshToken(models.Model):
-    user = models.ForeignKey(User)
-    token = models.CharField(max_length=255, default=long_token)
-    grant = models.ForeignKey(Grant)
-    client = models.ForeignKey(Client)
-    
-    def __unicode__(self):
-        return self.token
-
 class AccessToken(models.Model):
     user = models.ForeignKey(User)
     token = models.CharField(max_length=255, default=short_token)
@@ -49,3 +40,13 @@ class AccessToken(models.Model):
     
     def get_expire_delta(self):
         return (self.expires - datetime.now()).seconds
+
+class RefreshToken(models.Model):
+    user = models.ForeignKey(User)
+    token = models.CharField(max_length=255, default=long_token)
+    access_token = models.OneToOneField(AccessToken, related_name='refresh_token')
+    client = models.ForeignKey(Client)
+    expired = models.BooleanField(default=False)
+    
+    def __unicode__(self):
+        return self.token
