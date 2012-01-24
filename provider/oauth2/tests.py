@@ -4,7 +4,7 @@ from django.http import QueryDict
 from django.test import TestCase
 from django.utils.html import escape
 from provider import constants
-from provider.oauth2.models import Client
+from provider.oauth2.models import Client, Grant
 import json
 import urlparse
 
@@ -19,11 +19,14 @@ class Mixin(object):
         return reverse('oauth2:redirect')
     def access_token_url(self):
         return reverse('oauth2:access_token')
-    
+
     def get_client(self):
         return Client.objects.get(id=2)
 
-    #################################################################### Helpers
+    def get_grant(self):
+        return Grant.objects.all()[0]
+
+class TestMixin(object):
     
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
@@ -35,8 +38,9 @@ class Mixin(object):
         response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
-
-class AuthorizationTest(TestCase, Mixin):
+        
+    
+class AuthorizationTest(TestCase, TestMixin, Mixin):
     fixtures = ['test_oauth2']
 
     def setUp(self):
@@ -173,7 +177,7 @@ class AuthorizationTest(TestCase, Mixin):
         self.assertTrue('code' in response['Location'])
         self.assertTrue('state=abc' in response['Location'])
 
-class AccessTokenTest(TestCase, Mixin):
+class AccessTokenTest(TestCase, TestMixin, Mixin):
     fixtures = ['test_oauth2']
     
     def test_fetching_access_token_with_invalid_client(self):
@@ -240,6 +244,19 @@ class AccessTokenTest(TestCase, Mixin):
         self.assertEqual(400, response.status_code)
         self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'],
             response.content)
+    
+    def test_fetching_access_token_multiple_times(self):
+        self._login_authorize_get_token()
+        code = self.get_grant().code
+        
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+        
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('invalid_grant', json.loads(response.content)['error'])
         
     def test_refreshing_an_access_token(self):
         token = self._login_authorize_get_token()
@@ -263,7 +280,8 @@ class AccessTokenTest(TestCase, Mixin):
         self.assertEqual(400, response.status_code)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'],
             response.content)
-        
+    
+
 class EnforceSecureTest(TestCase, Mixin):
     fixtures = ['test_oauth2']
 
