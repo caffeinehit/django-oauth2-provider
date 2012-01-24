@@ -1,6 +1,8 @@
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from provider.oauth2.models import Client, Grant
-from provider.testcases import AuthorizationTest, AccessTokenTest, EnforceSecureTest
+from provider.testcases import AuthorizationTest, AccessTokenTest, \
+    EnforceSecureTest
 
 
 class Mixin(object):
@@ -14,15 +16,14 @@ class Mixin(object):
         return reverse('oauth2:redirect')
     def access_token_url(self):
         return reverse('oauth2:access_token')
-
     def get_client(self):
         return Client.objects.get(id=2)
-
     def get_grant(self):
         return Grant.objects.all()[0]
-
-
-
+    def get_user(self):
+        return User.objects.get(id=1)
+    def get_password(self):
+        return 'test'
         
 class AuthorizationTest(AuthorizationTest, Mixin):
     pass

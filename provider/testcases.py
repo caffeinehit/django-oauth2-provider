@@ -261,6 +261,28 @@ class AccessTokenTest(TestCase, TestMixin):
         self.assertEqual('invalid_grant', json.loads(response.content)['error'],
             response.content)
     
+    def test_password_grant(self):
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+        })
+        
+        self.assertEqual(200, response.status_code, response.content)
+        
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password() + 'invalid',
+        })
+        
+        self.assertEqual(400, response.status_code, response.content)
+        self.assertEqual('invalid_grant', json.loads(response.content)['error'])
+        
 
 class EnforceSecureTest(TestCase):
     fixtures = ['test_oauth2']

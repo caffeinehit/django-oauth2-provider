@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.core.urlresolvers import reverse
 from provider.oauth2.auth import BasicClientBackend, RequestParamsClientBackend
 from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm, \
-    GrantForm, RefreshTokenForm
+    PasswordGrantForm, RefreshTokenGrantForm, AuthorizationCodeGrantForm
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.views import Capture, Authorize, Redirect, \
     AccessToken as AccessTokenView
@@ -54,16 +54,22 @@ class AccessTokenView(AccessTokenView, Mixin):
         RequestParamsClientBackend,
     )
     
-    def get_grant(self, request, data, client):
-        form = GrantForm(data, client=client)
+    def get_authorization_code_grant(self, request, data, client):
+        form = AuthorizationCodeGrantForm(data, client=client)
         if form.is_valid():
             return True, form.cleaned_data.get('grant')
         return False, form.errors
 
-    def get_refresh_token(self, request, data, client):
-        form = RefreshTokenForm(data, client=client)
+    def get_refresh_token_grant(self, request, data, client):
+        form = RefreshTokenGrantForm(data, client=client)
         if form.is_valid():
             return True, form.cleaned_data.get('refresh_token')
+        return False, form.errors
+    
+    def get_password_grant(self, request, data, client):
+        form = PasswordGrantForm(data, client=client)
+        if form.is_valid():
+            return True, form.cleaned_data
         return False, form.errors
         
     def create_access_token(self, request, user, scope, client):
@@ -87,7 +93,6 @@ class AccessTokenView(AccessTokenView, Mixin):
     def invalidate_refresh_token(self, rt):
         rt.expired = True
         rt.save()
-        
     
     def invalidate_access_token(self, at):
         at.expires = datetime.now() - timedelta(days=1)

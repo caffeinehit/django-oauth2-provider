@@ -1,5 +1,6 @@
 from datetime import datetime
 from django import forms
+from django.contrib.auth import authenticate
 from django.utils.translation import ugettext_lazy as _
 from provider import constants
 from provider.constants import CONFIDENTIAL, ENFORCE_CLIENT_SECURE, SCOPES, \
@@ -10,6 +11,9 @@ from provider.utils import get_client, get_redirect_uri
 import urlparse
 
 class ClientAuthForm(forms.Form):
+    """
+    Form to authenticate a client from request data. 
+    """
     client_id = forms.CharField()
     client_secret = forms.CharField()
     
@@ -24,22 +28,6 @@ class ClientAuthForm(forms.Form):
         data['client'] = client
         return data
 
-class ClientForm(forms.ModelForm):
-    class Meta:
-        model = Client
-        fields = ('url', 'client_type', 'redirect_uri',)
-        
-    def clean(self):
-        data = self.cleaned_data
-
-        confidential = data['client_type'] == CONFIDENTIAL        
-        https = urlparse.urlparse(data['redirect_uri']).scheme == 'https'
-        
-        if ENFORCE_CLIENT_SECURE and not https:
-            raise forms.ValidationError(_("Your callback URL must be secure."))
-
-        return data
-    
 class AuthorizationRequestForm(OAuthForm):
     """
     This form is used to validate the request data that the authorization 
@@ -114,8 +102,13 @@ class AuthorizationRequestForm(OAuthForm):
                     'error_description': _("'%s' is not a valid scope." % s)})
     
         return u' '.join(scope)
+
+class ScopeMixin(object):
+    def clean_scope(self):
+        scope = self.cleaned_data.get('scope')        
+        return ' '.join(scope)
     
-class AuthorizationForm(forms.Form):
+class AuthorizationForm(forms.Form, ScopeMixin):
     """
     A form used to ask the resource owner for authorization of a given client.
     """
@@ -123,11 +116,6 @@ class AuthorizationForm(forms.Form):
     scope = forms.MultipleChoiceField(choices=[(c, c) for c in constants.SCOPES],
         required=True)
 
-    def clean_scope(self):
-        scope = self.cleaned_data.get('scope')
-        
-        return ' '.join(scope)
-    
     def save(self, **kwargs):
         authorize = self.cleaned_data.get('authorize')
 
@@ -137,14 +125,19 @@ class AuthorizationForm(forms.Form):
         grant = Grant()
         return grant
 
-class RefreshTokenForm(OAuthForm):
+class RefreshTokenGrantForm(OAuthForm, ScopeMixin):
     """
     Check and return a refresh token
     """
-    refresh_token = forms.CharField()
+    refresh_token = forms.CharField(required=False)
+    scope = forms.MultipleChoiceField(choices=[(c, c) for c in constants.SCOPES],
+        required=False)
     
     def clean_refresh_token(self):
         token = self.cleaned_data.get('refresh_token')
+
+        if not token:
+            raise OAuthValidationError({'error': 'invalid_request'})
         
         try:
             token = RefreshToken.objects.get(token=token,
@@ -154,17 +147,60 @@ class RefreshTokenForm(OAuthForm):
         
         return token
     
-class GrantForm(OAuthForm):
+class AuthorizationCodeGrantForm(OAuthForm, ScopeMixin):
     """
     Check and return a grant
     """
-    code = forms.CharField()
+    code = forms.CharField(required=False)
+    scope = forms.MultipleChoiceField(choices=[(c, c) for c in constants.SCOPES],
+        required=False)    
 
     def clean_code(self):
         code = self.cleaned_data.get('code')
+        
+        if not code:
+            raise OAuthValidationError({'error': 'invalid_request'})
+        
         try:
             self.cleaned_data['grant'] = Grant.objects.get(
                 code=code, client=self.client, expires__gt=datetime.now())
         except Grant.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_grant'})
+        
         return code
+
+class PasswordGrantForm(OAuthForm, ScopeMixin):
+    username = forms.CharField(required=False)
+    password = forms.CharField(required=False)
+    scope = forms.MultipleChoiceField(choices=[(c, c) for c in constants.SCOPES],
+        required=False)
+    
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+
+        if not username:
+            raise OAuthValidationError({'error': 'invalid_request'})
+        
+        return username
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        
+        if not password:
+            raise OAuthValidationError({'error': 'invalid_request'})
+        
+        return password
+    
+    def clean(self):
+        data = self.cleaned_data
+        
+        user = authenticate(username=data.get('username'),
+            password=data.get('password'))
+        
+        if user is None:
+            raise OAuthValidationError({'error': 'invalid_grant'})
+        
+        data['user'] = user
+        return data
+        
+        

@@ -20,3 +20,12 @@ class OAuthForm(forms.Form):
             super(OAuthForm, self)._clean_fields()
         except OAuthValidationError, e:
             self._errors.update(e.args[0])
+
+    def _clean_form(self):
+        """
+        Overriding the default cleaning behaviour for a shallow error dict.
+        """
+        try:
+            super(OAuthForm, self)._clean_form()
+        except OAuthValidationError, e:
+            self._errors.update(e.args[0])

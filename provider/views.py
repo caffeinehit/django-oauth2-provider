@@ -252,21 +252,29 @@ class AccessToken(OAuthView, Mixin):
     """
     
     authentication = ()
-    grant_types = ['authorization_code', 'refresh_token']
+    grant_types = ['authorization_code', 'refresh_token', 'password']
     
-    def get_grant(self, request, data, client):
+    def get_authorization_code_grant(self, request, data, client):
         """
-        Return the grant associated with this request, or an error dict.
+        Return the grant associated with this request or an error dict.
         :return tuple: ``(True or False, grant or error_dict)``
         """
         raise NotImplementedError
     
-    def get_refresh_token(self, request, data, client):
+    def get_refresh_token_grant(self, request, data, client):
         """
-        Return the refresh token associated with this request, or an error dict.
+        Return the refresh token associated with this request or an error dict.
         :return tuple: ``(True or False, token or error_dict)``
         """
         raise NotImplementedError
+    
+    def get_password_grant(self, request, data, client):
+        """
+        Return a user associated with this request or an error dict.
+        :return tuple: ``(True or False, user or error_dict)``
+        """
+        raise NotImplementedError
+        
     
     def create_access_token(self, request, user, scope, client):
         """
@@ -328,7 +336,7 @@ class AccessToken(OAuthView, Mixin):
         """
         Handle ``grant_type=authorization_token`` requests.
         """
-        valid, grant_or_error = self.get_grant(request, request.POST, client)
+        valid, grant_or_error = self.get_authorization_code_grant(request, request.POST, client)
         
         if not valid:
             return self.error_response(grant_or_error)
@@ -347,7 +355,7 @@ class AccessToken(OAuthView, Mixin):
         """
         Handle ``grant_type=refresh_token`` requests.
         """
-        valid, token_or_error = self.get_refresh_token(request, data, client)
+        valid, token_or_error = self.get_refresh_token_grant(request, data, client)
         
         if not valid:
             return self.error_response(token_or_error)
@@ -361,6 +369,23 @@ class AccessToken(OAuthView, Mixin):
         rt = self.create_refresh_token(request, at.user, at.scope, at, client)
         
         return self.access_token_response(at)
+    
+    def password(self, request, data, client):
+        """
+        Handle ``grant_type=password`` requests
+        """
+        
+        valid, data_or_error = self.get_password_grant(request, data, client)
+        
+        if not valid:
+            return self.error_response(data_or_error)
+
+        data = data_or_error
+        
+        at = self.create_access_token(request, data.get('user'), data.get('scope'), client)
+        rt = self.create_refresh_token(request, data.get('user'), data.get('scope'), at, client)
+        
+        return self.access_token_response(at)
         
     def get_handler(self, grant_type):
         """
@@ -371,6 +396,8 @@ class AccessToken(OAuthView, Mixin):
             return self.authorization_code
         elif grant_type == 'refresh_token':
             return self.refresh_token
+        elif grant_type == 'password':
+            return self.password
         return None
     
     def get(self, request):
