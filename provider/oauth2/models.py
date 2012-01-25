@@ -1,7 +1,7 @@
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
-from provider.constants import CLIENT_TYPES
+from provider.constants import CLIENT_TYPES, SCOPES
 from provider.utils import short_token, long_token, get_token_expiry, \
     get_code_expiry
 
@@ -23,7 +23,7 @@ class Grant(models.Model):
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
-    scope = models.CharField(max_length=255, blank=True)
+    scope = models.IntegerField(default=0)
     
     def __unicode__(self):
         return self.code
@@ -33,7 +33,7 @@ class AccessToken(models.Model):
     token = models.CharField(max_length=255, default=short_token)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField(default=get_token_expiry)
-    scope = models.CharField(max_length=255, blank=True)
+    scope = models.IntegerField(default=0)
     
     def __unicode__(self):
         return self.token

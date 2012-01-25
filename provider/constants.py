@@ -11,7 +11,15 @@ CLIENT_TYPES = (
 
 RESPONSE_TYPE_CHOICES = getattr(settings, 'OAUTH_RESPONSE_TYPE_CHOICES', ("code", "token"))
 
-SCOPES = getattr(settings, 'OAUTH_SCOPES', ('read', 'read+write'))
+READ = 1 << 1
+WRITE = 1 << 2  
+
+DEFAULT_SCOPES = (
+    (READ, 'read'),
+    (WRITE, 'write'),
+)
+
+SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
 
 EXPIRE_DELTA = getattr(settings, 'OAUTH_EXPIRE_DELTA', timedelta(days=365))
 

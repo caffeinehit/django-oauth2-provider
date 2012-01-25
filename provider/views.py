@@ -7,6 +7,12 @@ from provider import constants
 import json
 import urlparse
 
+class OAuthError(Exception):
+    """
+    Throw this error if an exception occurs that you want to be signalled to the
+    client.
+    """
+
 class OAuthView(TemplateView):
     """ Overriding dispatch method to add no caching headers to each 
     response. """
@@ -135,18 +141,16 @@ class Authorize(OAuthView, Mixin):
         client = self.get_client(data.get('client_id'))
         
         if client is None:
-            return False, {
+            raise OAuthError({
                 'error': 'unauthorized_client',
                 'error_description': _("An unauthorized client tried to access"
                     " your resources.")
-            }
+            })
 
         form = self.get_request_form(client, data)
-        
+
         if not form.is_valid():
-            # We expect a shallow form.errors dict:
-            # {'error': 'reason', 'error_description': 'Something'}
-            return False, form.errors
+            raise OAuthError(form.errors)
 
         return client, form.cleaned_data
     
@@ -175,11 +179,10 @@ class Authorize(OAuthView, Mixin):
         if data is None:
             return self.error_response(request, {'expired_authorization': True})
         
-        client, data = self._validate_client(request, data)
-
-        if not client:
-            return self.error_response(request, data, status=400)
-
+        try:
+            client, data = self._validate_client(request, data)
+        except OAuthError, e:
+            return self.error_response(request, e.args[0], status=400)
 
         authorization_form = self.get_authorization_form(request, client, post_data,
             data)
@@ -336,17 +339,12 @@ class AccessToken(OAuthView, Mixin):
         """
         Handle ``grant_type=authorization_token`` requests.
         """
-        valid, grant_or_error = self.get_authorization_code_grant(request, request.POST, client)
-        
-        if not valid:
-            return self.error_response(grant_or_error)
-        
-        grant = grant_or_error
+        grant = self.get_authorization_code_grant(request, request.POST, client)
         
         at = self.create_access_token(request, grant.user, grant.scope, client)
         rt = self.create_refresh_token(request, grant.user, grant.scope, at, client)
         
-        self.invalidate_grant(grant_or_error)
+        self.invalidate_grant(grant)
         
         return self.access_token_response(at)        
         
@@ -355,12 +353,7 @@ class AccessToken(OAuthView, Mixin):
         """
         Handle ``grant_type=refresh_token`` requests.
         """
-        valid, token_or_error = self.get_refresh_token_grant(request, data, client)
-        
-        if not valid:
-            return self.error_response(token_or_error)
-        
-        rt = token_or_error
+        rt = self.get_refresh_token_grant(request, data, client)
         
         self.invalidate_refresh_token(rt)
         self.invalidate_access_token(rt.access_token)
@@ -375,12 +368,7 @@ class AccessToken(OAuthView, Mixin):
         Handle ``grant_type=password`` requests
         """
         
-        valid, data_or_error = self.get_password_grant(request, data, client)
-        
-        if not valid:
-            return self.error_response(data_or_error)
-
-        data = data_or_error
+        data = self.get_password_grant(request, data, client)
         
         at = self.create_access_token(request, data.get('user'), data.get('scope'), client)
         rt = self.create_refresh_token(request, data.get('user'), data.get('scope'), at, client)
@@ -431,11 +419,9 @@ class AccessToken(OAuthView, Mixin):
         
         handler = self.get_handler(grant_type)
         
-        return handler(request, request.POST, client)
-        
-        
-
-
-    
+        try:
+            return handler(request, request.POST, client)
+        except OAuthError, e:
+            return self.error_response(e.args[0])
         
         

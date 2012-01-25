@@ -6,7 +6,7 @@ from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm, \
     PasswordGrantForm, RefreshTokenGrantForm, AuthorizationCodeGrantForm
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.views import Capture, Authorize, Redirect, \
-    AccessToken as AccessTokenView
+    AccessToken as AccessTokenView, OAuthError
 
 class Mixin(object):
     pass
@@ -32,6 +32,7 @@ class Authorize(Authorize, Mixin):
         return reverse('oauth2:redirect')
 
     def save_authorization(self, request, client, form, client_data):
+
         grant = form.save(commit=False)
 
         if grant is None:
@@ -40,7 +41,6 @@ class Authorize(Authorize, Mixin):
         grant.user = request.user
         grant.client = client
         grant.redirect_uri = client_data.get('redirect_uri', '')
-        grant.scope = client_data.get('scope', '')
         grant.save()
         return grant.code
 
@@ -56,21 +56,21 @@ class AccessTokenView(AccessTokenView, Mixin):
     
     def get_authorization_code_grant(self, request, data, client):
         form = AuthorizationCodeGrantForm(data, client=client)
-        if form.is_valid():
-            return True, form.cleaned_data.get('grant')
-        return False, form.errors
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data.get('grant')
 
     def get_refresh_token_grant(self, request, data, client):
         form = RefreshTokenGrantForm(data, client=client)
-        if form.is_valid():
-            return True, form.cleaned_data.get('refresh_token')
-        return False, form.errors
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data.get('refresh_token')
     
     def get_password_grant(self, request, data, client):
         form = PasswordGrantForm(data, client=client)
-        if form.is_valid():
-            return True, form.cleaned_data
-        return False, form.errors
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data
         
     def create_access_token(self, request, user, scope, client):
         return AccessToken.objects.create(

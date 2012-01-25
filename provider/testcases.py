@@ -15,7 +15,7 @@ class TestMixin(object):
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
         
-        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0]})
+        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0][1]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
         
@@ -106,7 +106,7 @@ class AuthorizationTest(TestCase, TestMixin):
     def test_authorization_requires_a_valid_scope(self):
         self.login()
         
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
         
         self.assertEqual(400, response.status_code)
@@ -114,7 +114,7 @@ class AuthorizationTest(TestCase, TestMixin):
         
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
             self.get_client().client_id,
-            constants.SCOPES[0]))
+            constants.SCOPES[0][1]))
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code)
 
@@ -124,7 +124,7 @@ class AuthorizationTest(TestCase, TestMixin):
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
         
-        response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0]})
+        response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0][1]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
         
@@ -237,6 +237,21 @@ class AccessTokenTest(TestCase, TestMixin):
         
         self.assertEqual(400, response.status_code)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
+        
+    def test_escalating_the_scope(self):
+        self.login()
+        self._login_and_authorize()
+        code = self.get_grant().code
+        
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code,
+            'scope': 'read write'})
+        
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('invalid_scope', json.loads(response.content)['error'])
         
     def test_refreshing_an_access_token(self):
         token = self._login_authorize_get_token()
