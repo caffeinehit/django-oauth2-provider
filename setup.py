@@ -10,6 +10,7 @@ setup(
     long_description=open('README.rst').read(),
     author='Alen Mujezinovic',
     author_email='alen@caffeinehit.com',
+    url = 'https://github.com/caffeinehit/django-oauth2-provider',
     packages= filter(
         lambda package: not package.startswith('testproject'), find_packages()),
     classifiers=[
