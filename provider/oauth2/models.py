@@ -2,6 +2,7 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
 from provider.constants import CLIENT_TYPES, SCOPES
+from provider.oauth2.managers import AccessTokenManager
 from provider.utils import short_token, long_token, get_token_expiry, \
     get_code_expiry
 
@@ -34,6 +35,8 @@ class AccessToken(models.Model):
     client = models.ForeignKey(Client)
     expires = models.DateTimeField(default=get_token_expiry)
     scope = models.IntegerField(default=0)
+
+    objects = AccessTokenManager()
     
     def __unicode__(self):
         return self.token
