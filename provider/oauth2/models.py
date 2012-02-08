@@ -8,7 +8,7 @@ from provider.utils import short_token, long_token, get_token_expiry, \
 
 
 class Client(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, blank = True, null = True)
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     client_id = models.CharField(max_length=255, default=short_token)

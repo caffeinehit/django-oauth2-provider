@@ -119,6 +119,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'provider',
     'provider.oauth2',
+    'south',
 )
 
 # A sample logging configuration. The only tangible logging
