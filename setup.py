@@ -11,8 +11,7 @@ setup(
     author='Alen Mujezinovic',
     author_email='alen@caffeinehit.com',
     url = 'https://github.com/caffeinehit/django-oauth2-provider',
-    packages= filter(
-        lambda package: not package.startswith('example'), find_packages()),
+    packages= find_packages(),
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
