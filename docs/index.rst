@@ -45,6 +45,8 @@ Settings
 
 The default settings are available in :attr:`provider.constants`.
 
+API
+###
 
 .. toctree::
    :maxdepth: 4
