@@ -1,9 +1,5 @@
 # django-oauth2-provider
 
-OAuth2 provider for your Django applications. Comes with a default OAuth2
-backend that uses whatever DB you've configured for Django.
+*django-oauth2-provider* is a Django application that provides customizable OAuth2_ authentication for your Django projects. 
 
-You can override the default behaviour by subclassing views and adding your
-own authentication backends and forms.
-
-So far, look at `provider.oauth2` - More will follow shortly...
+[Documentation](http://readthedocs.org/docs/django-oauth2-provider/en/latest/)
