@@ -26,7 +26,7 @@ that are meant for client (as defined in :draft:`1`) interaction.
     * Password grant: :draft:`5.1`
     
     To override, remove or add grant types, override the appropriate methods on
-    :class:`provider.views.AccessToken` and / or `provider.oauth2.views.AccessTokenView`.
+    :class:`provider.views.AccessToken` and / or :class:`provider.oauth2.views.AccessTokenView`.
     
     Errors are outlined in :draft:`5.2`.
     
