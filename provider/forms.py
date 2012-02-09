@@ -1,11 +1,39 @@
 from django import forms
 
 class OAuthValidationError(Exception):
-    pass
+    """
+    Exception to throw inside :class:`OAuthForm` if any OAuth2 related errors
+    are encountered such as invalid grant type, invalid client, etc.
+    
+    :attr:`OAuthValidationError` expects a dictionary outlining the OAuth error 
+    as its first argument when instantiating.
+    
+    :example:
+    
+    ::
+    
+        class GrantValidationForm(OAuthForm):
+            grant_type = forms.CharField()
+            
+            def clean_grant(self):
+                if not self.cleaned_data.get('grant_type') == 'code':
+                    raise OAuthValidationError({
+                        'error': 'invalid_grant', 
+                        'error_description': "%s is not a valid grant type" % (
+                            self.cleaned_data.get('grant_type'))
+                    })
+
+    The different types of errors are outlined in :draft:`4.2.2.1` and :draft:`5.2`.
+    """
 
 class OAuthForm(forms.Form):
     """
-    Custom form class that creates shallow error dicts.
+    Form class that creates shallow error dicts and exists early when a
+    :class:`OAuthValidationError` is raised. 
+    
+    The shallow error dict is reused when returning error responses to the client.
+    
+    The different types of errors are outlined in :draft:`4.2.2.1` and :draft:`5.2`.
     """
     def __init__(self, *args, **kwargs):
         self.client = kwargs.pop('client', None)

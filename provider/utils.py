@@ -24,8 +24,8 @@ def long_token():
 def get_token_expiry():
     """
     Return a datetime object indicating when an access token should expire. 
-    Can be customized by setting :settings:`OAUTH_EXPIRE_DELTA` to a 
-    ``datetime.timedelta`` object.
+    Can be customized by setting :attr:`settings.OAUTH_EXPIRE_DELTA` to a 
+    :attr:`datetime.timedelta` object.
     """
     return datetime.now() + EXPIRE_DELTA
 
@@ -33,21 +33,8 @@ def get_code_expiry():
     """
     Return a datetime object indicating when an authorization code should 
     expire.
-    Can be customized by setting :settings:`OAUTH_EXPIRE_CODE_DELTA` to a 
-    ``datetime.timedelta`` object.
+    Can be customized by setting :attr:`settings.OAUTH_EXPIRE_CODE_DELTA` to a 
+    :attr:`datetime.timedelta` object.
     """
     return datetime.now() + EXPIRE_CODE_DELTA
 
-def get_client(client_id):
-    """
-    Check each client backend if we can get a client or return ``None``
-    """
-    
-    return None
-    
-def get_redirect_uri(client):
-    """
-    Check each backend to return a redirect URL or ``None``
-    """
-    
-    return None

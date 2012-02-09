@@ -13,7 +13,8 @@ from provider.oauth2.scope import SCOPE_NAMES, SCOPE_NAME_DICT
 class ClientAuthForm(forms.Form):
     """
     Client authentication form. Required to make sure that we're dealing with a
-    real client
+    real client. Form is used in :attr:`provider.oauth2.backends` to validate
+    the client.
     """
     client_id = forms.CharField()
     client_secret = forms.CharField()
@@ -30,7 +31,9 @@ class ClientAuthForm(forms.Form):
         return data
 
 class ScopeChoiceField(forms.ChoiceField):
-    """ Custom form field that seperates values on space """
+    """ 
+    Custom form field that seperates values on space as defined in :draft:`3.3`.
+    """
     widget = forms.SelectMultiple
     
     def to_python(self, value):
@@ -58,13 +61,16 @@ class ScopeChoiceField(forms.ChoiceField):
                     'error_description': _("'%s' is not a valid scope.") % val})
     
 class ScopeMixin(object):
+    """
+    Form mixin to clean scope fields.
+    """
     def clean_scope(self):
         """
         The scope is assembled by combining all the set flags into a single 
         integer value which we can later check again for set bits.
         
         If *no* scope is set, we return the default scope which is the first
-        defined scope.
+        defined scope in :attr:`provider.constants.SCOPES`.
         
         """
         scope = SCOPES[0][0]
@@ -82,26 +88,36 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
     This form is used to validate the request data that the authorization 
     endpoint receives from clients.
     
-    The data per :rfc 4.1.1: includes:
-    
-    :param response_type: "code" or "token", depending on the grant type.
-    :param redirect_uri: Where the client would like to redirect the user
-        back to. This has to match whatever value was saved while creating
-        the client.
-    :param scope: The scope that the authorization should include.
-    :param state: Opaque - just pass back to client for validation.
+    Included data is specified in :draft:`4.1.1`.
     """
     # Setting all required fields to false to explicitly check by hand
     # and use custom error messages that can be reused in the OAuth2
     # protocol
     response_type = forms.CharField(required=False)
+    """
+    ``"code"`` or ``"token"`` depending on the grant type.
+    """
+    
     redirect_uri = forms.URLField(required=False)
+    """
+    Where the client would like to redirect the user
+    back to. This has to match whatever value was saved while creating
+    the client.
+    """
+    
     state = forms.CharField(required=False)
+    """
+    Opaque - just pass back to the client for validation.
+    """
+    
     scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    """
+    The scope that the authorization should include.
+    """
     
     def clean_response_type(self):
         """
-        :rfc 3.1.1: Lists of values are space delimited.
+        :draft:`3.1.1` Lists of values are space delimited.
         """
         response_type = self.cleaned_data.get('response_type')
         
@@ -120,7 +136,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
     def clean_redirect_uri(self):
         """
-        :rfc 3.1.2: The redirect value has to match what was saved on the 
+        :draft:`3.1.2` The redirect value has to match what was saved on the 
             authorization server.
         """
         redirect_uri = self.cleaned_data.get('redirect_uri')
@@ -151,7 +167,7 @@ class AuthorizationForm(ScopeMixin, OAuthForm):
 
 class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
     """
-    Check and return a refresh token
+    Checks and returns a refresh token.
     """
     refresh_token = forms.CharField(required=False)
     scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
@@ -182,6 +198,9 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
         return data
     
 class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
+    """
+    Check and return an authorization grant.
+    """
     code = forms.CharField(required=False)
     scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
     
@@ -213,6 +232,9 @@ class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
         return data
 
 class PasswordGrantForm(ScopeMixin, OAuthForm):
+    """
+    Validate the password of a user on a password grant request.
+    """
     username = forms.CharField(required=False)
     password = forms.CharField(required=False)
     scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)

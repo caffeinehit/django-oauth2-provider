@@ -1,21 +1,24 @@
 # Create your views here.
 from datetime import datetime, timedelta
 from django.core.urlresolvers import reverse
-from provider.oauth2.auth import BasicClientBackend, RequestParamsClientBackend
+from provider.oauth2.backends import BasicClientBackend, RequestParamsClientBackend
 from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm, \
     PasswordGrantForm, RefreshTokenGrantForm, AuthorizationCodeGrantForm
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.views import Capture, Authorize, Redirect, \
     AccessToken as AccessTokenView, OAuthError
 
-class Mixin(object):
-    pass
-
-class Capture(Capture, Mixin):
+class Capture(Capture):
+    """
+    Implementation of :class:`provider.views.Capture`.
+    """
     def get_redirect_url(self, request):
         return reverse('oauth2:authorize-2')
     
-class Authorize(Authorize, Mixin):
+class Authorize(Authorize):
+    """
+    Implementation of :class:`provider.views.Authorize`.
+    """
     def get_request_form(self, client, data):
         return AuthorizationRequestForm(data, client=client)
     
@@ -45,10 +48,21 @@ class Authorize(Authorize, Mixin):
         return grant.code
 
 
-class Redirect(Redirect, Mixin):
+class Redirect(Redirect):
+    """
+    Implementation of :class:`provider.views.Redirect`
+    """
     pass
 
-class AccessTokenView(AccessTokenView, Mixin):
+class AccessTokenView(AccessTokenView):
+    """
+    Implementation of :class:`provider.views.AccessToken`.
+    
+    .. note:: This implementation does provide all default grant types defined
+        in :attr:`provider.views.AccessToken.grant_types`. If you 
+        wish to disable any, you can override the :meth:`get_handler` method
+        *or* the :attr:`grant_types` list.
+    """
     authentication = (
         BasicClientBackend,
         RequestParamsClientBackend,

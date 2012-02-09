@@ -9,13 +9,30 @@ import urlparse
 
 class OAuthError(Exception):
     """
-    Throw this error if an exception occurs that you want to be signalled to the
-    client.
+    Exception to throw inside any views defined in :attr:`provider.views`.
+    
+    Any :attr:`OAuthError` thrown will be signalled to the API consumer.
+    
+    :attr:`OAuthError` expects a dictionary as its first argument outlining the
+    type of error that occured.
+    
+    :example:
+    
+    ::
+    
+        raise OAuthError({'error': 'invalid_request'})
+    
+    The different types of errors are outlined in :draft:`4.2.2.1` and :draft:`5.2`.
+    
     """
 
 class OAuthView(TemplateView):
-    """ Overriding dispatch method to add no caching headers to each 
-    response. """
+    """ 
+    Base class for any view dealing with the OAuth flow. This class overrides
+    the dispatch method of :attr:`TemplateView` to add no-caching headers to
+    every response as outlined in :draft:`5.1`.
+    """
+    
     def dispatch(self, request, *args, **kwargs):
         response = super(OAuthView, self).dispatch(request, *args, **kwargs)
         response['Cache-Control'] = 'no-store'
@@ -24,15 +41,31 @@ class OAuthView(TemplateView):
 
 class Mixin(object):
     """
-    Common methods required on the views below
+    Mixin providing common methods required in the OAuth view defined in
+    :attr:`provider.views`.
     """
     def get_data(self, request, key='params'):
+        """
+        Return stored data from the session store.
+        
+        :param key: `str` The key under which the data was stored.
+        """
         return request.session.get('%s:%s' % (constants.SESSION_KEY, key))
     
     def cache_data(self, request, data, key='params'):
+        """
+        Cache data in the session store.
+        
+        :param request: :attr:`django.http.HttpRequest`
+        :param data: Arbitrary data to store.
+        :param key: `str` The key under which to store the data.
+        """
         request.session['%s:%s' % (constants.SESSION_KEY, key)] = data
     
     def clear_data(self, request):
+        """
+        Clear all OAuth related data from the session store.
+        """
         for key in request.session.keys():
             if key.startswith(constants.SESSION_KEY):
                 del request.session[key]
@@ -50,7 +83,7 @@ class Mixin(object):
 
 class Capture(OAuthView, Mixin):
     """
-    As stated in section 3.1.2.5 this view captures all the request 
+    As stated in section :draft:`3.1.2.5` this view captures all the request 
     parameters and redirects to another URL to avoid any leakage of request
     parameters to potentially harmful JavaScripts.
     
@@ -58,16 +91,19 @@ class Capture(OAuthView, Mixin):
     handle SSL transport.
         
     If you want strict enforcement of secure communication at application level, 
-    set :settings:`OAUTH_ENFORCE_SECURE` to ``True``.
+    set :attr:`settings.OAUTH_ENFORCE_SECURE` to ``True``.
        
-    The actual implementation is required to override :method:`authorize_redirect`.
+    The actual implementation is required to override :meth:`get_redirect_url`.
     """
     template_name = 'provider/authorize.html'
 
     def get_redirect_url(self, request):
         """
-        Return a :class:`HttpResponseRedirect` object to the view handling the
-        resource owner's client authorization.
+        Return a redirect to a URL where the resource owner (see :draft:`1`) 
+        authorizes the client (also :draft:`1`).
+        
+        :return: :class:`django.http.HttpResponseRedirect`
+        
         """
         raise NotImplementedError
     
@@ -91,12 +127,32 @@ class Capture(OAuthView, Mixin):
 
 
 class Authorize(OAuthView, Mixin):
+    """
+    View to handle the client authorization as outlined in :draft:`4`. 
+    Implementation must override a set of methods:
+    
+    * :attr:`get_redirect_url`
+    * :attr:`get_request_form`
+    * :attr:`get_authorization_form`
+    * :attr:`get_client`
+    * :attr:`save_authorization`
+    
+    :attr:`Authorize` renders the ``provider/authorize.html`` template to 
+    display the authorization form.
+    
+    On successful authorization, it redirects the user back to the defined 
+    client callback as defined in :draft:`4.1.2`.
+    
+    On authorization fail :attr:`Authorize` displays an error message to the
+    user with a modified redirect URL to the callback including the error
+    and possibly description of the error as defined in :draft:`4.1.2.1`.
+    """
     template_name = 'provider/authorize.html'
     
     def get_redirect_url(self, request):
         """
-        Return a URL to the view handling the final redirection to the client
-        that initiated the authorization.
+        :return: ``str`` - The client URL to display in the template after 
+            authorization succeeded or failed.
         """
         raise NotImplementedError
     
@@ -110,25 +166,29 @@ class Authorize(OAuthView, Mixin):
     
     def get_authorization_form(self, request, client, data, client_data):
         """
-        Return a form that is capable of authorizing the client to use the 
-        owner resource.
+        Return a form that is capable of authorizing the client to the resource
+        owner.
+        
+        :return: :attr:`django.forms.Form`
         """
         raise NotImplementedError
     
     def get_client(self, client_id):
         """
         Return a client object from a given client identifier. Return ``None``
-        if the client id couldn't be found.
+        if no client is found. An error will be displayed to the resource owner
+        and presented to the client upon the final redirect.
         """
         raise NotImplementedError
 
     def save_authorization(self, request, client, form, client_data):
         """
         Save the authorization that the user granted to the client, involving
-        the creation of a time limited authorization code. 
+        the creation of a time limited authorization code as outlined in
+        :draft:`4.1.2`. 
         
-        Should return ``None`` in case authorization is not granted and 
-        a string representing the authorization code.
+        Should return ``None`` in case authorization is not granted.
+        Should return a string representing the authorization code grant.
         
         :return: ``None``, ``str``
         """
@@ -136,7 +196,7 @@ class Authorize(OAuthView, Mixin):
 
     def _validate_client(self, request, data):
         """
-        :return tuple: ``(client or False, data or error)`` 
+        :return: ``tuple`` - ``(client or False, data or error)`` 
         """
         client = self.get_client(data.get('client_id'))
         
@@ -156,7 +216,14 @@ class Authorize(OAuthView, Mixin):
     
     def error_response(self, request, error, **kwargs):
         """
-        :param error: dict
+        Return an error to be displayed to the resource owner if anything goes
+        awry. Errors can include invalid clients, authorization denials and
+        other edge cases such as a wrong ``redirect_uri`` in the authorization
+        request.
+        
+        :param request: :attr:`django.http.HttpRequest`
+        :param error: ``dict`` 
+            The different types of errors are outlined in :draft:`4.2.2.1` 
         """
         ctx = {}
         ctx.update(error)
@@ -208,10 +275,11 @@ class Authorize(OAuthView, Mixin):
         return self.handle(request, request.POST)
         
       
-    
 class Redirect(OAuthView, Mixin):
     """
-    Redirect the user back to the client.
+    Redirect the user back to the client with the right query parameters set.
+    This can be either parameters indicating success or parameters indicating
+    an error.
     """
     def get(self, request):
         data = self.get_data(request)
@@ -245,53 +313,78 @@ class Redirect(OAuthView, Mixin):
 
 class AccessToken(OAuthView, Mixin):    
     """
-    According to the RFC this endpoint too must require the use of secure 
-    communication.
+    :attr:`AccessToken` handles creation and refreshing of access tokens.
     
-    If you want strict enforcement of secure communication at application level,
-    set :settings:`OAUTH_ENFORCE_SECURE` to ``True``.
+    Implementations must implement a number of methods:
     
-    According to :rfc 3.2: we can only accept POST requests.
+    * :attr:`get_authorization_code_grant`
+    * :attr:`get_refresh_token_grant`
+    * :attr:`get_password_grant`
+    * :attr:`create_access_token`
+    * :attr:`create_refresh_token`
+    * :attr:`invalidate_grant`
+    * :attr:`invalidate_access_token`
+    * :attr:`invalidate_refresh_token`
+    
+    The default implementation supports the grant types defined in :attr:`grant_types`.
+    
+    According to :draft:`4.4.2` this endpoint too must support secure communication.
+    For strict enforcement of secure communication at application level set
+    :attr:`settings.OAUTH_ENFORCE_SECURE` to ``True``.
+    
+    According to :draft:`3.2` we can only accept POST requests.
+    
+    Returns with a status code of *400* in case of errors. *200* in case of 
+    success.
     """
     
     authentication = ()
+    """
+    Authentication backends used to authenticate a particular client.
+    """
+    
     grant_types = ['authorization_code', 'refresh_token', 'password']
+    """
+    The default grant types supported by this view.
+    """
     
     def get_authorization_code_grant(self, request, data, client):
         """
         Return the grant associated with this request or an error dict.
-        :return tuple: ``(True or False, grant or error_dict)``
+        
+        :return: ``tuple`` - ``(True or False, grant or error_dict)``
         """
         raise NotImplementedError
     
-    def get_refresh_token_grant(self, request, data, client):
+    def get_refresh_token_grant(self, request, data, client): 
         """
         Return the refresh token associated with this request or an error dict.
-        :return tuple: ``(True or False, token or error_dict)``
+        
+        :return: ``tuple`` - ``(True or False, token or error_dict)``
         """
         raise NotImplementedError
     
-    def get_password_grant(self, request, data, client):
+    def get_password_grant(self, request, data, client): 
         """
         Return a user associated with this request or an error dict.
-        :return tuple: ``(True or False, user or error_dict)``
+        
+        :return: ``tuple`` - ``(True or False, user or error_dict)``
         """
         raise NotImplementedError
-        
-    
-    def create_access_token(self, request, user, scope, client):
+           
+    def create_access_token(self, request, user, scope, client): 
         """
         Override to handle access token creation.
         
-        :return obj: Access token
+        :return: ``object`` - Access token
         """
         raise NotImplementedError
     
-    def create_refresh_token(self, request, user, scope, access_token, client):
+    def create_refresh_token(self, request, user, scope, access_token, client): 
         """
         Override to handle refresh token creation.
         
-        :return obj: Refresh token
+        :return: ``object`` - Refresh token
         """
         raise NotImplementedError
     
@@ -323,9 +416,17 @@ class AccessToken(OAuthView, Mixin):
         raise NotImplementedError
     
     def error_response(self, error, mimetype='application/json', status=400, **kwargs):
+        """
+        Return an error response to the client with default status code of *400*
+        stating the error as outlined in :draft:`5.2`.
+        """
         return HttpResponse(json.dumps(error), mimetype=mimetype, status=status, **kwargs)        
     
     def access_token_response(self, access_token):
+        """
+        Returns a successful response after creating the access token 
+        as defined in :draft:`5.1`.
+        """
         return HttpResponse(
             json.dumps({
                 'access_token': access_token.token,
@@ -337,7 +438,8 @@ class AccessToken(OAuthView, Mixin):
     
     def authorization_code(self, request, data, client):
         """
-        Handle ``grant_type=authorization_token`` requests.
+        Handle ``grant_type=authorization_token`` requests as defined in 
+        :draft:`4.1.3`.
         """
         grant = self.get_authorization_code_grant(request, request.POST, client)
         
@@ -351,7 +453,7 @@ class AccessToken(OAuthView, Mixin):
         
     def refresh_token(self, request, data, client):
         """
-        Handle ``grant_type=refresh_token`` requests.
+        Handle ``grant_type=refresh_token`` requests as defined in :draft:`6`.
         """
         rt = self.get_refresh_token_grant(request, data, client)
         
@@ -365,7 +467,7 @@ class AccessToken(OAuthView, Mixin):
     
     def password(self, request, data, client):
         """
-        Handle ``grant_type=password`` requests
+        Handle ``grant_type=password`` requests as defined in :draft:`4.3`.
         """
         
         data = self.get_password_grant(request, data, client)
@@ -377,8 +479,9 @@ class AccessToken(OAuthView, Mixin):
         
     def get_handler(self, grant_type):
         """
-        Return a function or method that is capable handling the 'grant_type'
-        requested by the client.
+        Return a function or method that is capable handling the ``grant_type``
+        requested by the client or return ``None`` to indicate that this type
+        of grant type is not supported, resulting in an error response.
         """
         if grant_type == 'authorization_code':
             return self.authorization_code
@@ -390,14 +493,15 @@ class AccessToken(OAuthView, Mixin):
     
     def get(self, request):
         """
-        As per :rfc 3.2: the token endpoint *only* supports POST requests.
+        As per :draft:`3.2` the token endpoint *only* supports POST requests.
+        Returns an error response.
         """
         return self.error_response({'error': 'invalid_request',
             'error_description': _("Only POST requests allowed.")})
     
     def post(self, request):
         """
-        As per :rfc 3.2: the token endpoint *only* supports POST requests.
+        As per :draft:`3.2` the token endpoint *only* supports POST requests.
         """
         if constants.ENFORCE_SECURE and not request.is_secure():
             return self.error_response({'error': 'invalid_request',
