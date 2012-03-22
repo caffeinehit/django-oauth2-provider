@@ -1,5 +1,8 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
+from django.test import TestCase
+from provider.constants import CLIENT_TYPES
+from provider.oauth2.forms import ClientForm
 from provider.oauth2.models import Client, Grant
 from provider.testcases import AuthorizationTest, AccessTokenTest, \
     EnforceSecureTest
@@ -33,3 +36,17 @@ class AccessTokenTest(AccessTokenTest, Mixin):
 
 class EnforceSecureTest(EnforceSecureTest, Mixin):
     pass
+
+class TestClientForm(TestCase, Mixin):
+    def test_client_form(self):
+        form = ClientForm({'name': 'TestName', 'url': 'http://127.0.0.1:8000',
+            'redirect_uri': 'http://localhost:8000/'})
+        
+        self.assertFalse(form.is_valid())
+        
+        form = ClientForm({'name': 'TestName', 'url': 'http://127.0.0.1:8000',
+            'redirect_uri': 'http://localhost:8000/', 'client_type': CLIENT_TYPES[0][0]})
+        self.assertTrue(form.is_valid())
+        client = form.save()
+        
+        

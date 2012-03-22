@@ -16,7 +16,7 @@ class ClientForm(forms.ModelForm):
     """
     class Meta:
         model = Client
-        fields = ('name', 'url', 'redirect_uri')
+        fields = ('name', 'url', 'redirect_uri', 'client_type')
     
     def save(self, user=None, **kwargs):
         self.instance.user = user
