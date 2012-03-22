@@ -10,6 +10,18 @@ from provider.oauth2 import scope
 from provider.oauth2.models import Client, Grant, RefreshToken
 from provider.oauth2.scope import SCOPE_NAMES, SCOPE_NAME_DICT
 
+class ClientForm(forms.ModelForm):
+    """
+    Form to create new consumers.
+    """
+    class Meta:
+        model = Client
+        fields = ('name', 'url', 'redirect_uri')
+    
+    def save(self, user=None, **kwargs):
+        self.instance.user = user
+        return super(ClientForm, self).save(**kwargs)
+
 class ClientAuthForm(forms.Form):
     """
     Client authentication form. Required to make sure that we're dealing with a
