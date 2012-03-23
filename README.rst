@@ -11,7 +11,5 @@ customizable OAuth2\_ authentication for your Django projects.
 Changes
 =======
 
-.. toctree: 
-    :maxdepth 4:
+.. include:: docs/changes.rst
     
-    docs/changes
