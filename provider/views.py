@@ -256,10 +256,14 @@ class Authorize(OAuthView, Mixin):
             data)
 
         if not authorization_form.is_bound:
-            return self.render_to_response({'form': authorization_form})
+            return self.render_to_response({
+                'client': client,
+                'form': authorization_form})
         
         if not authorization_form.is_valid():
-            return self.render_to_response({'form': authorization_form})
+            return self.render_to_response({
+                'client': client,
+                'form': authorization_form})
         
         code = self.save_authorization(request, client, authorization_form, data)
 
