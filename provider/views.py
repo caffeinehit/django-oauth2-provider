@@ -6,6 +6,7 @@ from django.views.generic.base import TemplateView, View
 from provider import constants
 import json
 import urlparse
+from provider import scope
 
 class OAuthError(Exception):
     """
@@ -432,7 +433,7 @@ class AccessToken(OAuthView, Mixin):
                 'access_token': access_token.token,
                 'expires_in': access_token.get_expire_delta(),
                 'refresh_token': access_token.refresh_token.token,
-                'scope': access_token.scope
+                'scope': ' '.join(scope.names(access_token.scope)),
             }), mimetype='application/json'
         )
     

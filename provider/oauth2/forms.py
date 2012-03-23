@@ -6,9 +6,9 @@ from django.utils.translation import ugettext as _
 from provider import constants
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
 from provider.forms import OAuthForm, OAuthValidationError
-from provider.oauth2 import scope
+from provider import scope
 from provider.oauth2.models import Client, Grant, RefreshToken
-from provider.oauth2.scope import SCOPE_NAMES, SCOPE_NAME_DICT
+from provider.scope import SCOPE_NAMES, SCOPE_NAME_DICT
 
 class ClientForm(forms.ModelForm):
     """

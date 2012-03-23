@@ -7,3 +7,11 @@ django-oauth2-provider
 customizable OAuth2\_ authentication for your Django projects.
 
 `Documentation <http://readthedocs.org/docs/django-oauth2-provider/en/latest/>`_
+
+Changes
+=======
+
+.. toctree: 
+    :maxdepth 4:
+    
+    docs/changes

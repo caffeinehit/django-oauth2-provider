@@ -60,6 +60,13 @@
     :members:
     :no-undoc-members:
 
+`provider.scope`
+-----------------------
+.. automodule:: provider.scope
+    :members:
+    :no-undoc-members:    
+
+
 `provider.utils`
 ----------------    
 .. automodule:: provider.utils
@@ -75,12 +82,6 @@
 `provider.oauth2`
 =================
 
-`provider.oauth2.auth`
-----------------------
-.. automodule:: provider.oauth2.auth
-    :members:
-    :no-undoc-members:
-
 `provider.oauth2.forms`
 -----------------------
 .. automodule:: provider.oauth2.forms
@@ -90,12 +91,6 @@
 `provider.oauth2.models`
 ------------------------
 .. automodule:: provider.oauth2.models
-    :members:
-    :no-undoc-members:    
-
-`provider.oauth2.scope`
------------------------
-.. automodule:: provider.oauth2.scope
     :members:
     :no-undoc-members:    
 

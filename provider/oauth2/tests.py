@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from provider.constants import CLIENT_TYPES
+from provider import constants
+from provider import scope
 from provider.oauth2.forms import ClientForm
 from provider.oauth2.models import Client, Grant
 from provider.testcases import AuthorizationTest, AccessTokenTest, \
@@ -45,8 +46,23 @@ class TestClientForm(TestCase, Mixin):
         self.assertFalse(form.is_valid())
         
         form = ClientForm({'name': 'TestName', 'url': 'http://127.0.0.1:8000',
-            'redirect_uri': 'http://localhost:8000/', 'client_type': CLIENT_TYPES[0][0]})
+            'redirect_uri': 'http://localhost:8000/', 'client_type': constants.CLIENT_TYPES[0][0]})
         self.assertTrue(form.is_valid())
         client = form.save()
         
+class TestScopeNames(TestCase, Mixin):
+    def setUp(self):
+        self._scopes = constants.SCOPES
+        constants.SCOPES = constants.DEFAULT_SCOPES
+    def tearDown(self):
+        constants.SCOPES = self._scopes
+
+    def test_get_scope_names(self):
+        names = scope.names(constants.READ)
+        self.assertEqual('read', ' '.join(names))
         
+        names = scope.names(constants.READ_WRITE)
+        names.sort()
+        
+        self.assertEqual('read write', ' '.join(names))
+

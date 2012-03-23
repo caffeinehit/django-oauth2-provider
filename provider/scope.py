@@ -61,3 +61,14 @@ def check(wants, has):
     if wants & has < wants:
         return False
     return True
+
+def names(scope):
+    """
+    Returns a list of scope names as defined in :attr:`provider.constants.SCOPES` 
+    for a given scope integer.
+    """
+    return [
+        name 
+        for (name, value) in SCOPE_NAME_DICT.iteritems()
+        if check(value, scope)
+    ]

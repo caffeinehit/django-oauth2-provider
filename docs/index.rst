@@ -52,6 +52,14 @@ API
    :maxdepth: 4
    
    api
+   
+Changes
+#######
+
+.. toctree::
+    :maxdepth: 3
+    
+    changes
 
 
 Made by `Caffeinehit <http://www.caffeinehit.com/>`_.

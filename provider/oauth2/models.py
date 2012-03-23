@@ -7,6 +7,7 @@ these models with fields and and methods to be compatible with the views in
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
+from provider import constants
 from provider.constants import CLIENT_TYPES, SCOPES
 from provider.oauth2.managers import AccessTokenManager
 from provider.utils import short_token, long_token, get_token_expiry, \
@@ -90,7 +91,7 @@ class AccessToken(models.Model):
     token = models.CharField(max_length=255, default=short_token)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField(default=get_token_expiry)
-    scope = models.IntegerField(default=0)
+    scope = models.IntegerField(default=constants.SCOPES[0][0])
 
     objects = AccessTokenManager()
     
