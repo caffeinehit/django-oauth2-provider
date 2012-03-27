@@ -66,6 +66,11 @@
     :members:
     :no-undoc-members:    
 
+`provider.templatetags.scope`
+-----------------------------
+.. automodule:: provider.templatetags.scope
+    :members:
+    :no-undoc-members:
 
 `provider.utils`
 ----------------    
@@ -78,6 +83,7 @@
 .. automodule:: provider.views
     :members:
     :no-undoc-members:
+    
 
 `provider.oauth2`
 =================

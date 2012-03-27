@@ -66,6 +66,9 @@ def names(scope):
     """
     Returns a list of scope names as defined in :attr:`provider.constants.SCOPES` 
     for a given scope integer.
+    
+        >>> assert ['read', 'write'] == provider.scope.names(provider.constants.READ_WRITE)
+        
     """
     return [
         name 

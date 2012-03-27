@@ -1,10 +1,10 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from provider import constants
-from provider import scope
+from provider import constants, scope
 from provider.oauth2.forms import ClientForm
 from provider.oauth2.models import Client, Grant
+from provider.templatetags.scope import scopes
 from provider.testcases import AuthorizationTest, AccessTokenTest, \
     EnforceSecureTest
 
@@ -66,3 +66,11 @@ class TestScopeNames(TestCase, Mixin):
         
         self.assertEqual('read write', ' '.join(names))
 
+    def test_template_filter(self):
+        names = scopes(constants.READ)
+        self.assertEqual('read', ' '.join(names))
+        
+        names = scope.names(constants.READ_WRITE)
+        names.sort()
+        
+        self.assertEqual('read write', ' '.join(names))
