@@ -41,7 +41,7 @@ def check(wants, has):
     
     ::
     
-        >>> from provider.oauth2 import scope
+        >>> from provider import scope
         >>> scope.check(READ, READ)
         True
         >>> scope.check(WRITE, READ)
