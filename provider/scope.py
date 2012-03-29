@@ -62,7 +62,7 @@ def check(wants, has):
         return False
     return True
 
-def names(scope):
+def to_names(scope):
     """
     Returns a list of scope names as defined in :attr:`provider.constants.SCOPES` 
     for a given scope integer.
@@ -75,3 +75,26 @@ def names(scope):
         for (name, value) in SCOPE_NAME_DICT.iteritems()
         if check(value, scope)
     ]
+# Keep it compatible
+names = to_names
+
+def to_int(*names, **kwargs):
+    """
+    Turns a list of scope names into an integer value.
+    
+    ::
+    
+        >>> scope.to_int('read')
+        2
+        >>> scope.to_int('write')
+        6
+        >>> scope.to_int('read', 'write')
+        6
+        >>> scope.to_int('invalid')
+        0
+        >>> scope.to_int('invalid', default = 1)
+        1
+        
+    """
+    
+    return reduce(lambda prev, next: (prev | SCOPE_NAME_DICT.get(next, 0)), names, kwargs.pop('default', 0))

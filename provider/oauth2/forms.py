@@ -85,14 +85,12 @@ class ScopeMixin(object):
         defined scope in :attr:`provider.constants.SCOPES`.
         
         """
-        scope = SCOPES[0][0]
+        default = SCOPES[0][0]
         
-        flags = self.cleaned_data.get('scope')
-        
-        if not flags:
-            return scope
-        
-        return reduce(lambda prev, next: (prev | SCOPE_NAME_DICT[next]), flags, scope)
+        flags = self.cleaned_data.get('scope', [])
+
+        return scope.to_int(default=default, *flags)        
+
         
 
 class AuthorizationRequestForm(ScopeMixin, OAuthForm):

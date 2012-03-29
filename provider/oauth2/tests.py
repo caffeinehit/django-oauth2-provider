@@ -50,7 +50,7 @@ class TestClientForm(TestCase, Mixin):
         self.assertTrue(form.is_valid())
         client = form.save()
         
-class TestScopeNames(TestCase, Mixin):
+class TestScope(TestCase, Mixin):
     def setUp(self):
         self._scopes = constants.SCOPES
         constants.SCOPES = constants.DEFAULT_SCOPES
@@ -58,13 +58,21 @@ class TestScopeNames(TestCase, Mixin):
         constants.SCOPES = self._scopes
 
     def test_get_scope_names(self):
-        names = scope.names(constants.READ)
+        names = scope.to_names(constants.READ)
         self.assertEqual('read', ' '.join(names))
         
         names = scope.names(constants.READ_WRITE)
         names.sort()
         
         self.assertEqual('read write', ' '.join(names))
+    
+    def test_get_scope_ints(self):
+        self.assertEqual(constants.READ, scope.to_int('read'))
+        self.assertEqual(constants.READ_WRITE, scope.to_int('write'))
+        self.assertEqual(constants.READ_WRITE, scope.to_int('read', 'write'))
+        self.assertEqual(0, scope.to_int('invalid'))
+        self.assertEqual(1, scope.to_int('invalid', default=1))
+
 
     def test_template_filter(self):
         names = scopes(constants.READ)
