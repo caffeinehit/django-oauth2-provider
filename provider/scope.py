@@ -5,8 +5,7 @@ Default scope implementation relying on bit shifting. See
 Scopes can be combined, such as ``"read write"``. Note that a single ``"write"``
 scope is *not* the same as ``"read write"``.
 
-See :class:`provider.oauth2.forms.ScopeMixin` on how scopes are
-combined.
+See :class:`provider.scope.to_int` on how scopes are combined.
 """
 
 from provider.constants import SCOPES
