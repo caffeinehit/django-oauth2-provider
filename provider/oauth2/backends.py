@@ -63,7 +63,7 @@ class AccessTokenBackend(object):
     
     def authenticate(self, access_token=None, client=None):
         try:
-            return AccessToken.objects.get(access_token=access_token,
+            return AccessToken.objects.get(token=access_token,
                 expiry__gt=datetime.now(), client=client)
         except AccessToken.DoesNotExist:
             return None
