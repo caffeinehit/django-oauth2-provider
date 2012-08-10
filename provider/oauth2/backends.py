@@ -12,6 +12,7 @@ class BaseBackend(object):
         Override this method to implement your own authentication backend.
         Return a client or ``None`` in case of failure.
         """
+        pass
 
 class BasicClientBackend(object):
     """
