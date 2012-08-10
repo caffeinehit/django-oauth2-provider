@@ -88,10 +88,10 @@ class AccessToken(models.Model):
         expiry
     """
     user = models.ForeignKey(User)
-    token = models.CharField(max_length=255, default=short_token)
+    token = models.CharField(max_length=255, default=long_token)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField(default=get_token_expiry)
-    scope = models.IntegerField(default=constants.SCOPES[0][0])
+    scope = models.IntegerField(default=constants.SCOPES[0][0], choices=constants.SCOPES)
 
     objects = AccessTokenManager()
     
