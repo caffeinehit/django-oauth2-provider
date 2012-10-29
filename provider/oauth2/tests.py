@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from provider import constants, scope
@@ -10,6 +10,8 @@ from provider.templatetags.scope import scopes
 from provider.testcases import AuthorizationTest, AccessTokenTest, \
     EnforceSecureTest
 
+from provider.utils import get_user_model
+user_model = get_user_model()
 
 class Mixin(object):
     def login(self):
@@ -27,7 +29,7 @@ class Mixin(object):
     def get_grant(self):
         return Grant.objects.all()[0]
     def get_user(self):
-        return User.objects.get(id=1)
+        return get_user_model().objects.get(id=1)
     def get_password(self):
         return 'test'
         
@@ -115,4 +117,3 @@ class AuthBackendTest(TestCase, Mixin):
         self.assertIsNotNone(AccessTokenBackend().authenticate(access_token = token.token,
                                                                client = self.get_client()))
 
-    

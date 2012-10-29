@@ -11,7 +11,9 @@ from provider import constants
 from provider.constants import CLIENT_TYPES, SCOPES
 from provider.oauth2.managers import AccessTokenManager
 from provider.utils import short_token, long_token, get_token_expiry, \
-    get_code_expiry
+    get_code_expiry, get_user_model
+
+user_model = get_user_model()
 
 
 class Client(models.Model):
@@ -30,7 +32,7 @@ class Client(models.Model):
     
     Clients are outlined in the :draft:`2` and its subsections.
     """
-    user = models.ForeignKey(User, blank=True, null=True)
+    user = models.ForeignKey(user_model, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
@@ -57,7 +59,7 @@ class Grant(models.Model):
     * :attr:`redirect_uri`
     * :attr:`scope`
     """
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(user_model)
     client = models.ForeignKey(Client)
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
@@ -87,7 +89,7 @@ class AccessToken(models.Model):
     * :meth:`get_expire_delta` - returns an integer representing seconds to
         expiry
     """
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(user_model)
     token = models.CharField(max_length=255, default=long_token)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField(default=get_token_expiry)
@@ -117,7 +119,7 @@ class RefreshToken(models.Model):
     * :attr:`client` - :class:`Client`
     * :attr:`expired` - ``boolean``
     """
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(user_model)
     token = models.CharField(max_length=255, default=long_token)
     access_token = models.OneToOneField(AccessToken, related_name='refresh_token')
     client = models.ForeignKey(Client)

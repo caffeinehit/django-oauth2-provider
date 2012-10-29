@@ -38,3 +38,14 @@ def get_code_expiry():
     """
     return datetime.now() + EXPIRE_CODE_DELTA
 
+def get_user_model():
+    """
+    Returns active user model.
+    """
+
+    try:
+        from django.contrib.auth import get_user_model as django_get_user_model
+        return django_get_user_model()
+    except ImportError:
+        from django.contrib.auth.models import User
+        return User
