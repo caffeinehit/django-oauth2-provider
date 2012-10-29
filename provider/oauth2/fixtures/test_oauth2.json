@@ -38,7 +38,7 @@
             "user_permissions": [], 
             "username": "test-user-1"
         }, 
-        "model": "auth.user", 
+        "model": "provider.User",
         "pk": 1
     }, 
     {
@@ -56,7 +56,7 @@
             "user_permissions": [], 
             "username": "test-user-2"
         }, 
-        "model": "auth.user", 
+        "model": "provider.User",
         "pk": 2
     }
 ]
