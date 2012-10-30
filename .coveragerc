@@ -1,0 +1,20 @@
+[run]
+branch = True
+cover_pylib = True
+
+[paths]
+source =
+    provider
+    */site-packages/provider
+
+[report]
+include =
+    provider/*
+    */site-packages/provider/*
+omit =
+    provider/oauth2/migrations/*
+    provider/testcases
+    provider/oauth2/tests
+exclude_lines =
+    raise NotImplementedError
+    pass
