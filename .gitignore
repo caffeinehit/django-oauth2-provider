@@ -3,3 +3,4 @@ dist/
 django_oauth2_provider.egg-info/
 
 *.pyc
+/.tox
