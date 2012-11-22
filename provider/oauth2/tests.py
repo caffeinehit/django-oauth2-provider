@@ -115,4 +115,13 @@ class AuthBackendTest(TestCase, Mixin):
         self.assertIsNotNone(AccessTokenBackend().authenticate(access_token = token.token,
                                                                client = self.get_client()))
 
-    
+    def test_has_scope(self):
+        token = AccessToken.objects.create(
+            user=self.get_user(),
+            client=self.get_client(),
+            scope=constants.READ
+        )
+        self.assertTrue(token.has_scope('read'))
+        self.assertFalse(token.has_scope('write'))
+        self.assertTrue(token.has_scope(constants.READ))
+        self.assertFalse(token.has_scope(constants.WRITE))

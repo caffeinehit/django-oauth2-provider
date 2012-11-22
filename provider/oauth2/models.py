@@ -109,7 +109,7 @@ class AccessToken(models.Model):
         Return `True` if the token satisfies the required scope.
         `required` may be provided as either the integer or string representation.
         """
-        if not isinstance(required, int):
+        if isinstance(required, basestring):
             required = scope.SCOPE_NAME_DICT[required]
         return scope.check(required, self.scope)
 
