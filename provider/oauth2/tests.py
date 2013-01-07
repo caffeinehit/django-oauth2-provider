@@ -5,7 +5,6 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.test import TestCase, SimpleTestCase
-from django.test.utils import override_settings
 from django.contrib.auth.models import User
 from django.contrib.auth.tests.utils import skipIfCustomUser
 from .. import constants, scope
