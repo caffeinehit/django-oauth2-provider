@@ -212,10 +212,16 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
         Make sure that the scope is less or equal to the previous scope!
         """
         data = self.cleaned_data
-        scope = data.get('scope')
-        access_token_scope = data.get('refresh_token').access_token.scope
-        scope_valid = scope.check(scope, access_token_scope)
-        if 'scope' in data and not scope_valid:
+        want_scope = data.get('scope') or 0
+        refresh_token = data.get('refresh_token')
+        access_token = getattr(refresh_token, 'access_token', None) if \
+            refresh_token else \
+            None
+        has_scope = access_token.scope if access_token else 0
+
+        # Only check if we've actually got a scope in the data
+        # (read: All fields have been cleaned)
+        if want_scope is not 0 and not scope.check(want_scope, has_scope):
             raise OAuthValidationError({'error': 'invalid_scope'})
 
         return data
@@ -248,10 +254,13 @@ class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
         grant!
         """
         data = self.cleaned_data
-        scope_valid = scope.check(data.get('scope'), data.get('grant').scope)
+        want_scope = data.get('scope') or 0
+        grant = data.get('grant')
+        has_scope = grant.scope if grant else 0
+
         # Only check if we've actually got a scope in the data
         # (read: All fields have been cleaned)
-        if 'scope' in data and not scope_valid:
+        if want_scope is not 0 and not scope.check(want_scope, has_scope):
             raise OAuthValidationError({'error': 'invalid_scope'})
 
         return data
