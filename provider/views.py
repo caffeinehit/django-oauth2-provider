@@ -454,7 +454,7 @@ class AccessToken(OAuthView, Mixin):
 
     def authorization_code(self, request, data, client):
         """
-        Handle ``grant_type=authorization_token`` requests as defined in
+        Handle ``grant_type=authorization_code`` requests as defined in
         :draft:`4.1.3`.
         """
         grant = self.get_authorization_code_grant(request, request.POST,
