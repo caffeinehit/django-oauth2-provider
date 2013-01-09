@@ -7,4 +7,7 @@ install:
     - pip install -r requirements.txt --use-mirrors
     - python setup.py develop
 script: python example/manage.py test provider oauth2 -v2
-  
+branches:
+  only:
+    - master
+    - develop
