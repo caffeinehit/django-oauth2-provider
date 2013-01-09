@@ -8,12 +8,12 @@
                     {% if permission == "read" %}
                     Read your data
                     {% else %}
-                    Write your data 
+                    Write your data
                     {% endif %}
                 </li>
             {% endfor %}
         </ul>
-        <form method="post" action=".">
+        <form method="post" action="{% url "oauth2:authorize" %}">
             {% csrf_token %}
             {{ form.errors }}
             {{ form.non_field_errors }}
@@ -26,7 +26,7 @@
                     </select>
                 </div>
                 <input type="submit" class="btn login large danger" value="Cancel" />
-                <input type="submit" class="btn login large primary" name="authorize" value="Authorize" />  
+                <input type="submit" class="btn login large primary" name="authorize" value="Authorize" />
             </fieldset>
         </form>
     {% else %}

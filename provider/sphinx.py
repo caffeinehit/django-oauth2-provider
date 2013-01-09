@@ -22,13 +22,13 @@ def rfclink(name, rawtext, text, lineno, inliner, options={}, content=[]):
     """
 
     node = nodes.reference(rawtext, "Draft Section " + text, refuri="%s#section-%s" % (base_url, text))
-    
+
     return [node], []
 
 def setup(app):
     """
     Install the plugin.
-    
+
     :param app: Sphinx application context.
     """
     app.add_role('draft', rfclink)
