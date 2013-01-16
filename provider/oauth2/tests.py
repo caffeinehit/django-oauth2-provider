@@ -4,10 +4,10 @@ from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
-from django.test import TestCase, SimpleTestCase
+from django.test import TestCase
 from django.contrib.auth.models import User
-from django.contrib.auth.tests.utils import skipIfCustomUser
 from .. import constants, scope
+from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
 from .forms import ClientForm
 from .models import Client, Grant, AccessToken
@@ -392,7 +392,7 @@ class EnforceSecureTest(BaseOAuth2TestCase):
         self.assertTrue("A secure connection is required." in response.content)
 
 
-class ClientFormTest(SimpleTestCase):
+class ClientFormTest(TestCase):
     def test_client_form(self):
         form = ClientForm({'name': 'TestName', 'url': 'http://127.0.0.1:8000',
             'redirect_uri': 'http://localhost:8000/'})
@@ -408,7 +408,7 @@ class ClientFormTest(SimpleTestCase):
         form.save()
 
 
-class ScopeTest(SimpleTestCase):
+class ScopeTest(TestCase):
     def setUp(self):
         self._scopes = constants.SCOPES
         constants.SCOPES = constants.DEFAULT_SCOPES

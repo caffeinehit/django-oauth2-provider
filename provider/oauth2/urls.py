@@ -33,9 +33,9 @@ that are meant for client (as defined in :draft:`1`) interaction.
 
 """
 
-from django.conf.urls.defaults import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from ..compat.urls import *
 from .views import Authorize, Redirect, Capture, AccessTokenView
 
 
