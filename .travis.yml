@@ -15,5 +15,5 @@ branches:
   only:
     - master
     - develop
-script: tests/test.sh
+script: ./test.sh
 
