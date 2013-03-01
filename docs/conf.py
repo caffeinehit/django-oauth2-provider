@@ -11,7 +11,13 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, provider
+import sys, os
+
+PROJECT_DIR = os.path.dirname(__file__)
+location = lambda x: os.path.join(os.path.dirname(os.path.realpath(__file__)), x)
+sys.path.append(location('..'))
+
+import provider
 
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'example.settings'
