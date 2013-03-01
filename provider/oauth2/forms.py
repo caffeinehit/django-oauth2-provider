@@ -48,7 +48,7 @@ class ClientAuthForm(forms.Form):
 class ScopeChoiceField(forms.ChoiceField):
     """
     Custom form field that seperates values on space as defined in
-    :draft:`3.3`.
+    :rfc:`3.3`.
     """
     widget = forms.SelectMultiple
 
@@ -103,7 +103,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
     This form is used to validate the request data that the authorization
     endpoint receives from clients.
 
-    Included data is specified in :draft:`4.1.1`.
+    Included data is specified in :rfc:`4.1.1`.
     """
     # Setting all required fields to false to explicitly check by hand
     # and use custom error messages that can be reused in the OAuth2
@@ -132,7 +132,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
     def clean_response_type(self):
         """
-        :draft:`3.1.1` Lists of values are space delimited.
+        :rfc:`3.1.1` Lists of values are space delimited.
         """
         response_type = self.cleaned_data.get('response_type')
 
@@ -153,7 +153,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
     def clean_redirect_uri(self):
         """
-        :draft:`3.1.2` The redirect value has to match what was saved on the
+        :rfc:`3.1.2` The redirect value has to match what was saved on the
             authorization server.
         """
         redirect_uri = self.cleaned_data.get('redirect_uri')
