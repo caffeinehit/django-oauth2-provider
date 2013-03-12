@@ -108,7 +108,8 @@ class AccessToken(models.Model):
         """
         Return the number of seconds until this token expires.
         """
-        return (self.expires - datetime.now()).seconds
+        timedelta = self.expires - datetime.now()
+        return int(timedelta.total_seconds())
 
 
 class RefreshToken(models.Model):
