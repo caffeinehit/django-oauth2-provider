@@ -104,12 +104,14 @@ class AccessToken(models.Model):
     def __unicode__(self):
         return self.token
 
-    def get_expire_delta(self):
+    def get_expire_delta(self, reference=None):
         """
         Return the number of seconds until this token expires.
         """
-        timedelta = self.expires - datetime.now()
-        return int(timedelta.total_seconds())
+        if reference is None:
+            reference = datetime.now()
+        timedelta = self.expires - reference
+        return timedelta.days*86400 + timedelta.seconds
 
 
 class RefreshToken(models.Model):
