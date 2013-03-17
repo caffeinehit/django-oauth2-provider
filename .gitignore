@@ -1,5 +1,8 @@
-build/
-dist/
-django_oauth2_provider.egg-info/
-
 *.pyc
+.DS_Store
+_build
+.*.sw[po]
+*.egg-info
+dist
+build
+venv

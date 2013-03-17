@@ -3,7 +3,7 @@ Custom Sphinx documentation module to link to parts of the OAuth2 draft.
 """
 from docutils import nodes, utils
 
-base_url = "http://tools.ietf.org/html/draft-ietf-oauth-v2-23"
+base_url = "http://tools.ietf.org/html/rfc6749"
 
 def rfclink(name, rawtext, text, lineno, inliner, options={}, content=[]):
     """Link to the OAuth2 draft.
@@ -21,7 +21,7 @@ def rfclink(name, rawtext, text, lineno, inliner, options={}, content=[]):
     :param content: The directive content for customization.
     """
 
-    node = nodes.reference(rawtext, "Draft Section " + text, refuri="%s#section-%s" % (base_url, text))
+    node = nodes.reference(rawtext, "Section " + text, refuri="%s#section-%s" % (base_url, text))
 
     return [node], []
 
@@ -31,5 +31,5 @@ def setup(app):
 
     :param app: Sphinx application context.
     """
-    app.add_role('draft', rfclink)
+    app.add_role('rfc', rfclink)
     return

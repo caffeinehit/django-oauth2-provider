@@ -5,45 +5,15 @@ Welcome to django-oauth2-provider's documentation!
 
 The default implementation makes reasonable assumptions about the allowed  grant types and provides clients with two easy accessible URL endpoints. (:attr:`provider.oauth2.urls`)
 
-If you require custom database backends, URLs, wish to extend the OAuth2_ protocol as defined in :draft:`8` or anything else, you can override the default behaviours by subclassing the views in :attr:`provider.views` and add your specific use cases.
+If you require custom database backends, URLs, wish to extend the OAuth2_ protocol as defined in :rfc:`8` or anything else, you can override the default behaviours by subclassing the views in :attr:`provider.views` and add your specific use cases.
 
-Installation
-############
+Getting started
+###############
 
-::
+.. toctree::
+   :maxdepth: 2
 
-    pip install django-oauth2-provider
-    
-
-Configuration
-#############
-
-An example configuration is included in the repository_.
-
-If you're happy using the default backend add these two lines to your settings:
-
-::
-
-    INSTALLED_APPS = (
-        # ...
-        'provider',
-        'provider.oauth2',
-    )       
-
-And include :attr:`provider.oauth2.urls` into your root ``urls.py`` file. 
-
-::
-
-    url(r'^oauth2/', include('provider.oauth2.urls', namespace = 'oauth2')),
-    
-    
-.. note:: The namespace argument is required.    
-
-
-Settings
-########
-
-The default settings are available in :attr:`provider.constants`.
+   getting_started
 
 API
 ###
@@ -64,5 +34,5 @@ Changes
 
 Made by `Caffeinehit <http://www.caffeinehit.com/>`_.
 
-.. _OAuth2: http://tools.ietf.org/html/draft-ietf-oauth-v2-23
-.. _repository: https://github.com/caffeinehit/django-oauth2-provider/blob/master/example/settings.py
+.. _OAuth2: http://tools.ietf.org/html/rfc6749
+.. _repository: https://github.com/caffeinehit/django-oauth2-provider/blob/master/example/

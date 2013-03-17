@@ -30,7 +30,7 @@ class Client(models.Model):
     * :attr:`client_secret`
     * :attr:`client_type`
 
-    Clients are outlined in the :draft:`2` and its subsections.
+    Clients are outlined in the :rfc:`2` and its subsections.
     """
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
         blank=True, null=True)
@@ -50,7 +50,7 @@ class Grant(models.Model):
     Default grant implementation. A grant is a code that can be swapped for an
     access token. Grants have a limited lifetime as defined by
     :attr:`provider.constants.EXPIRE_CODE_DELTA` and outlined in
-    :draft:`4.1.2`
+    :rfc:`4.1.2`
 
     Expected fields:
 
@@ -77,7 +77,7 @@ class AccessToken(models.Model):
     Default access token implementation. An access token is a time limited
     token to access a user's resources.
 
-    Access tokens are outlined :draft:`5`.
+    Access tokens are outlined :rfc:`5`.
 
     Expected fields:
 

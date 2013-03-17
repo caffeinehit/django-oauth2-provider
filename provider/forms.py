@@ -24,8 +24,8 @@ class OAuthValidationError(Exception):
                             self.cleaned_data.get('grant_type'))
                     })
 
-    The different types of errors are outlined in :draft:`4.2.2.1` and
-    :draft:`5.2`.
+    The different types of errors are outlined in :rfc:`4.2.2.1` and
+    :rfc:`5.2`.
     """
 
 
@@ -37,8 +37,8 @@ class OAuthForm(forms.Form):
     The shallow error dict is reused when returning error responses to the
     client.
 
-    The different types of errors are outlined in :draft:`4.2.2.1` and
-    :draft:`5.2`.
+    The different types of errors are outlined in :rfc:`4.2.2.1` and
+    :rfc:`5.2`.
     """
     def __init__(self, *args, **kwargs):
         self.client = kwargs.pop('client', None)
