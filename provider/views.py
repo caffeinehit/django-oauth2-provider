@@ -503,8 +503,11 @@ class AccessToken(OAuthView, Mixin):
         user = data.get('user')
         scope = data.get('scope')
 
-        at = self.create_access_token(request, user, scope, client)
-        rt = self.create_refresh_token(request, user, scope, at, client)
+        if constants.SINGLE_ACCESS_TOKEN:
+            at = self.get_access_token(request, user, scope, client)
+        else:
+            at = self.create_access_token(request, user, scope, client)
+            rt = self.create_refresh_token(request, user, scope, at, client)
 
         return self.access_token_response(at)
 
