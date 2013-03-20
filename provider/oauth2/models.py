@@ -4,9 +4,9 @@ implement these models with fields and and methods to be compatible with the
 views in :attr:`provider.views`.
 """
 
-from datetime import datetime
 from django.db import models
 from django.conf import settings
+from django.utils.timezone import now
 from .. import constants
 from ..constants import CLIENT_TYPES
 from ..utils import short_token, long_token, get_token_expiry
@@ -109,7 +109,7 @@ class AccessToken(models.Model):
         Return the number of seconds until this token expires.
         """
         if reference is None:
-            reference = datetime.now()
+            reference = now()
         timedelta = self.expires - reference
         return timedelta.days*86400 + timedelta.seconds
 

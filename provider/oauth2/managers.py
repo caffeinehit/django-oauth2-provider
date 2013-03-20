@@ -1,7 +1,7 @@
-from datetime import datetime
+from django.utils.timezone import now
 from django.db import models
 
 
 class AccessTokenManager(models.Manager):
     def get_token(self, token):
-        return self.get(token=token, expires__gt=datetime.now())
+        return self.get(token=token, expires__gt=now())

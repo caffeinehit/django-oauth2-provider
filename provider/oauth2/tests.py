@@ -1,6 +1,7 @@
 import json
 import urlparse
 import datetime
+from django.utils.timezone import now as date_now
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -202,7 +203,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         user = self.get_user()
         client = self.get_client()
         token = AccessToken.objects.create(user=user, client=client)
-        now = datetime.datetime.now()
+        now = date_now()
         default_expiration_timedelta = constants.EXPIRE_DELTA
         current_expiration_timedelta = datetime.timedelta(seconds=token.get_expire_delta(reference=now))
         self.assertTrue(abs(current_expiration_timedelta - default_expiration_timedelta) <= datetime.timedelta(seconds=1))
