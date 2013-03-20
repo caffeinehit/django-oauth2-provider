@@ -1,8 +1,20 @@
 import hashlib
 import shortuuid
-from datetime import datetime
+from datetime import datetime, tzinfo
 from django.conf import settings
 from .constants import EXPIRE_DELTA, EXPIRE_CODE_DELTA
+
+try:
+    from django.utils import timezone
+except ImportError:
+    timezone = None
+
+def now():
+    if timezone:
+        return timezone.now()
+    else:
+        # Django 1.3 compatibility
+        return datetime.now()
 
 
 def short_token():
@@ -29,7 +41,7 @@ def get_token_expiry():
     Can be customized by setting :attr:`settings.OAUTH_EXPIRE_DELTA` to a
     :attr:`datetime.timedelta` object.
     """
-    return datetime.now() + EXPIRE_DELTA
+    return now() + EXPIRE_DELTA
 
 
 def get_code_expiry():
@@ -39,4 +51,4 @@ def get_code_expiry():
     Can be customized by setting :attr:`settings.OAUTH_EXPIRE_CODE_DELTA` to a
     :attr:`datetime.timedelta` object.
     """
-    return datetime.now() + EXPIRE_CODE_DELTA
+    return now() + EXPIRE_CODE_DELTA

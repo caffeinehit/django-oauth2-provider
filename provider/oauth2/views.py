@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.core.urlresolvers import reverse
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
+from ..utils import now
 from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
@@ -104,7 +105,7 @@ class AccessTokenView(AccessTokenView):
         )
 
     def invalidate_grant(self, grant):
-        grant.expires = datetime.now() - timedelta(days=1)
+        grant.expires = now() - timedelta(days=1)
         grant.save()
 
     def invalidate_refresh_token(self, rt):
@@ -112,5 +113,5 @@ class AccessTokenView(AccessTokenView):
         rt.save()
 
     def invalidate_access_token(self, at):
-        at.expires = datetime.now() - timedelta(days=1)
+        at.expires = now() - timedelta(days=1)
         at.save()

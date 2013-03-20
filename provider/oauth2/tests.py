@@ -1,5 +1,6 @@
 import json
 import urlparse
+import datetime
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -9,6 +10,7 @@ from django.contrib.auth.models import User
 from .. import constants, scope
 from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
+from ..utils import now as date_now
 from .forms import ClientForm
 from .models import Client, Grant, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
@@ -196,6 +198,15 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
 class AccessTokenTest(BaseOAuth2TestCase):
     fixtures = ['test_oauth2.json']
+
+    def test_access_token_get_expire_delta_value(self):
+        user = self.get_user()
+        client = self.get_client()
+        token = AccessToken.objects.create(user=user, client=client)
+        now = date_now()
+        default_expiration_timedelta = constants.EXPIRE_DELTA
+        current_expiration_timedelta = datetime.timedelta(seconds=token.get_expire_delta(reference=now))
+        self.assertTrue(abs(current_expiration_timedelta - default_expiration_timedelta) <= datetime.timedelta(seconds=1))
 
     def test_fetching_access_token_with_invalid_client(self):
         self.login()
