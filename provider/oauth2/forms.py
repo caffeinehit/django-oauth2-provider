@@ -1,4 +1,3 @@
-from django.utils.timezone import now
 from django import forms
 from django.contrib.auth import authenticate
 from django.utils.encoding import smart_unicode
@@ -7,6 +6,7 @@ from .. import scope
 from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
 from ..forms import OAuthForm, OAuthValidationError
 from ..scope import SCOPE_NAMES
+from ..utils import now
 from .models import Client, Grant, RefreshToken
 
 

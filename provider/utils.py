@@ -1,8 +1,20 @@
 import hashlib
 import shortuuid
-from django.utils.timezone import now
+from datetime import datetime, tzinfo
 from django.conf import settings
 from .constants import EXPIRE_DELTA, EXPIRE_CODE_DELTA
+
+try:
+    from django.utils import timezone
+except ImportError:
+    timezone = None
+
+def now():
+    if timezone:
+        return timezone.now()
+    else:
+        # Django 1.3 compatibility
+        return datetime.now()
 
 
 def short_token():

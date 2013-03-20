@@ -1,4 +1,4 @@
-from django.utils.timezone import now
+from ..utils import now
 from .forms import ClientAuthForm
 from .models import AccessToken
 

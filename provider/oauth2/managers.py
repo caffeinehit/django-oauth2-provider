@@ -1,4 +1,4 @@
-from django.utils.timezone import now
+from ..utils import now
 from django.db import models
 
 

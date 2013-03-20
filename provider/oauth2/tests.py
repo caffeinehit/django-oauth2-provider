@@ -1,7 +1,6 @@
 import json
 import urlparse
 import datetime
-from django.utils.timezone import now as date_now
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -11,6 +10,7 @@ from django.contrib.auth.models import User
 from .. import constants, scope
 from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
+from ..utils import now as date_now
 from .forms import ClientForm
 from .models import Client, Grant, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
