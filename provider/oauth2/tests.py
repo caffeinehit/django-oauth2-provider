@@ -262,6 +262,16 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'],
             response.content)
 
+    def test_fetching_single_access_token(self):
+        constants.SINGLE_ACCESS_TOKEN = True
+
+        result1 = self._login_authorize_get_token()
+        result2 = self._login_authorize_get_token()
+
+        self.assertEqual(result1['access_token'], result2['access_token'])
+
+        constants.SINGLE_ACCESS_TOKEN = False
+
     def test_fetching_access_token_multiple_times(self):
         self._login_authorize_get_token()
         code = self.get_grant().code
