@@ -4,6 +4,9 @@ from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
 
+from provider.compat import user_model_label
+
+
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
@@ -32,8 +35,8 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
-        'auth.user': {
-            'Meta': {'object_name': 'User'},
+        user_model_label: {
+            'Meta': {'object_name': user_model_label.split('.')[-1]},
             'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
@@ -62,7 +65,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'scope': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'token': ('django.db.models.fields.CharField', [], {'default': "'d9373f4d09149181e1c5'", 'max_length': '255'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['%s']" % user_model_label})
         },
         'oauth2.client': {
             'Meta': {'object_name': 'Client'},
@@ -73,7 +76,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'redirect_uri': ('django.db.models.fields.URLField', [], {'max_length': '200'}),
             'url': ('django.db.models.fields.URLField', [], {'max_length': '200'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'null': 'True', 'blank': 'True'})
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['%s']" % user_model_label, 'null': 'True', 'blank': 'True'})
         },
         'oauth2.grant': {
             'Meta': {'object_name': 'Grant'},
@@ -83,7 +86,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'redirect_uri': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'scope': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['%s']" % user_model_label})
         },
         'oauth2.refreshtoken': {
             'Meta': {'object_name': 'RefreshToken'},
@@ -92,7 +95,7 @@ class Migration(SchemaMigration):
             'expired': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'token': ('django.db.models.fields.CharField', [], {'default': "'50d5f3e805e02073364c4ebfc55a94328afe25bd'", 'max_length': '255'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['%s']" % user_model_label})
         }
     }
 
