@@ -36,6 +36,7 @@ that are meant for client (as defined in :draft:`1`) interaction.
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from ..compat.urls import *
+from ..utils import cross_domain_ajax
 from .views import Authorize, Redirect, Capture, AccessTokenView
 
 
@@ -50,6 +51,6 @@ urlpatterns = patterns('',
         login_required(Redirect.as_view()),
         name='redirect'),
     url('^access_token/?$',
-        csrf_exempt(AccessTokenView.as_view()),
+        cross_domain_ajax(csrf_exempt(AccessTokenView.as_view())),
         name='access_token'),
 )
