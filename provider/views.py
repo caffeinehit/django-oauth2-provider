@@ -333,6 +333,7 @@ class AccessToken(OAuthView, Mixin):
     * :attr:`get_authorization_code_grant`
     * :attr:`get_refresh_token_grant`
     * :attr:`get_password_grant`
+    * :attr:`get_access_token`
     * :attr:`create_access_token`
     * :attr:`create_refresh_token`
     * :attr:`invalidate_grant`
@@ -383,6 +384,14 @@ class AccessToken(OAuthView, Mixin):
         Return a user associated with this request or an error dict.
 
         :return: ``tuple`` - ``(True or False, user or error_dict)``
+        """
+        raise NotImplementedError
+
+    def get_access_token(self, request, user, scope, client):
+        """
+        Override to handle fetching of an existing access token.
+
+        :return: ``object`` - Access token
         """
         raise NotImplementedError
 
@@ -459,9 +468,12 @@ class AccessToken(OAuthView, Mixin):
         """
         grant = self.get_authorization_code_grant(request, request.POST,
                 client)
-        at = self.create_access_token(request, grant.user, grant.scope, client)
-        rt = self.create_refresh_token(request, grant.user, grant.scope, at,
-                client)
+        if constants.SINGLE_ACCESS_TOKEN:
+            at = self.get_access_token(request, grant.user, grant.scope, client)
+        else:
+            at = self.create_access_token(request, grant.user, grant.scope, client)
+            rt = self.create_refresh_token(request, grant.user, grant.scope, at,
+                    client)
 
         self.invalidate_grant(grant)
 
@@ -491,8 +503,11 @@ class AccessToken(OAuthView, Mixin):
         user = data.get('user')
         scope = data.get('scope')
 
-        at = self.create_access_token(request, user, scope, client)
-        rt = self.create_refresh_token(request, user, scope, at, client)
+        if constants.SINGLE_ACCESS_TOKEN:
+            at = self.get_access_token(request, user, scope, client)
+        else:
+            at = self.create_access_token(request, user, scope, client)
+            rt = self.create_refresh_token(request, user, scope, at, client)
 
         return self.access_token_response(at)
 
