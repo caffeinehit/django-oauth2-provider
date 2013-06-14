@@ -13,14 +13,12 @@
 
 import sys, os
 
-PROJECT_DIR = os.path.dirname(__file__)
-location = lambda x: os.path.join(os.path.dirname(os.path.realpath(__file__)), x)
-sys.path.append(location('..'))
+sys.path = [(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))] + sys.path
 
 import provider
 
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'example.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
