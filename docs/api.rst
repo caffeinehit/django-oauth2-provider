@@ -14,7 +14,7 @@
 
     :settings: `OAUTH_RESPONSE_TYPE_CHOICES`
 
-    The response types as outlined by :draft:`3.1.1`
+    The response types as outlined by :rfc:`3.1.1`
 
 .. attribute:: SCOPES
 
@@ -28,17 +28,17 @@
 
     :settings: `OAUTH_EXPIRE_DELTA`
     :default: `datetime.timedelta(days=365)`
-
-    The time to expiry for access tokens as outlined in :draft:`4.2.2` and
-    :draft:`5.1`.
-
+    
+    The time to expiry for access tokens as outlined in :rfc:`4.2.2` and
+    :rfc:`5.1`.
+    
 .. attribute:: EXPIRE_CODE_DELTA
 
     :settings: `OAUTH_EXPIRE_CODE_DELTA`
     :default: `datetime.timedelta(seconds=10*60)`
-
-    The time to expiry for an authorization code grant as outlined in :draft:`4.1.2`.
-
+    
+    The time to expiry for an authorization code grant as outlined in :rfc:`4.1.2`.
+    
 .. attribute:: ENFORCE_SECURE
 
     :settings: `OAUTH_ENFORCE_SECURE`

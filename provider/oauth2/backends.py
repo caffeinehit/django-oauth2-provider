@@ -5,7 +5,7 @@ from .models import AccessToken
 
 class BaseBackend(object):
     """
-    Base backend used to authenticate clients as defined in :draft:`1` against
+    Base backend used to authenticate clients as defined in :rfc:`1` against
     our database.
     """
     def authenticate(self, request=None):
@@ -19,7 +19,7 @@ class BaseBackend(object):
 class BasicClientBackend(object):
     """
     Backend that tries to authenticate a client through HTTP authorization
-    headers as defined in :draft:`2.3.1`.
+    headers as defined in :rfc:`2.3.1`.
     """
     def authenticate(self, request=None):
         auth = request.META.get('HTTP_AUTHORIZATION')
@@ -47,7 +47,7 @@ class BasicClientBackend(object):
 class RequestParamsClientBackend(object):
     """
     Backend that tries to authenticate a client through request parameters
-    which might be in the request body or URI as defined in :draft:`2.3.1`.
+    which might be in the request body or URI as defined in :rfc:`2.3.1`.
     """
     def authenticate(self, request=None):
         if request is None:
