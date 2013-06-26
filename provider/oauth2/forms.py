@@ -30,7 +30,7 @@ class ClientAuthForm(forms.Form):
     the client.
     """
     client_id = forms.CharField()
-    client_secret = forms.CharField()
+    client_secret = forms.CharField(required=False)
 
     def clean(self):
         data = self.cleaned_data
