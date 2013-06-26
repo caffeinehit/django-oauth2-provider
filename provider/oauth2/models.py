@@ -43,7 +43,7 @@ class Client(models.Model):
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     client_id = models.CharField(max_length=255, default=short_token)
-    client_secret = models.CharField(max_length=255, default=long_token)
+    client_secret = models.CharField(max_length=255, default=long_token, blank=True)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
 
     def __unicode__(self):
