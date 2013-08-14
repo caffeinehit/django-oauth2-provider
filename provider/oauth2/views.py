@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.core.urlresolvers import reverse
+from ..signals import access_token_fetched
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
 from ..utils import now
@@ -8,6 +9,7 @@ from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
 from .models import Client, RefreshToken, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
+
 
 
 class Capture(Capture):
@@ -94,18 +96,25 @@ class AccessTokenView(AccessTokenView):
         try:
             # Attempt to fetch an existing access token.
             at = AccessToken.objects.get(user=user, client=client, scope=scope)
+            # Send Signal
+            access_token_fetched.send(sender=AccessToken, request=request, created=False, instance=at)
         except AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
             self.create_refresh_token(request, user, scope, at, client)
+
         return at
 
     def create_access_token(self, request, user, scope, client):
-        return AccessToken.objects.create(
+        at = AccessToken.objects.create(
             user=user,
             client=client,
             scope=scope
         )
+        # Send signal
+        access_token_fetched.send(sender=AccessToken, request=request, created=True, instance=at)
+
+        return at
 
     def create_refresh_token(self, request, user, scope, access_token, client):
         return RefreshToken.objects.create(
