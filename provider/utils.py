@@ -1,38 +1,21 @@
-import hashlib
-import shortuuid
 from datetime import datetime, tzinfo
 from django.conf import settings
 from .constants import EXPIRE_DELTA, EXPIRE_CODE_DELTA
+from django.utils.timezone import now
+from django.utils.crypto import get_random_string
 
-try:
-    from django.utils import timezone
-except ImportError:
-    timezone = None
-
-def now():
-    if timezone:
-        return timezone.now()
-    else:
-        # Django 1.3 compatibility
-        return datetime.now()
-
-
-def short_token():
+def short_token(length=16):
     """
     Generate a hash that can be used as an application identifier
     """
-    hash = hashlib.sha1(shortuuid.uuid())
-    hash.update(settings.SECRET_KEY)
-    return hash.hexdigest()[::2]
+    return get_random_string(length)
 
 
-def long_token():
+def long_token(length=32):
     """
     Generate a hash that can be used as an application secret
     """
-    hash = hashlib.sha1(shortuuid.uuid())
-    hash.update(settings.SECRET_KEY)
-    return hash.hexdigest()
+    return get_random_string(length)
 
 
 def get_token_expiry():
