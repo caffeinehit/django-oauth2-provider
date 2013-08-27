@@ -442,7 +442,7 @@ class AccessToken(OAuthView, Mixin):
         return HttpResponse(json.dumps(error), mimetype=mimetype,
                 status=status, **kwargs)
 
-    def access_token_response(self, access_token):
+    def access_token_response(self, access_token, refresh_token=None):
         """
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
@@ -451,7 +451,8 @@ class AccessToken(OAuthView, Mixin):
             json.dumps({
                 'access_token': access_token.token,
                 'expires_in': access_token.get_expire_delta(),
-                'refresh_token': access_token.refresh_token.token,
+                'refresh_token': refresh_token.token if refresh_token else \
+                                 access_token.refresh_token.token,
                 'scope': ' '.join(scope.names(access_token.scope)),
             }), mimetype='application/json'
         )
@@ -465,6 +466,7 @@ class AccessToken(OAuthView, Mixin):
                 client)
         if constants.SINGLE_ACCESS_TOKEN:
             at = self.get_access_token(request, grant.user, grant.scope, client)
+            rt = None
         else:
             at = self.create_access_token(request, grant.user, grant.scope, client)
             rt = self.create_refresh_token(request, grant.user, grant.scope, at,
@@ -472,7 +474,7 @@ class AccessToken(OAuthView, Mixin):
 
         self.invalidate_grant(grant)
 
-        return self.access_token_response(at)
+        return self.access_token_response(at, rt)
 
     def refresh_token(self, request, data, client):
         """
@@ -487,7 +489,7 @@ class AccessToken(OAuthView, Mixin):
                 client)
         rt = self.create_refresh_token(request, at.user, at.scope, at, client)
 
-        return self.access_token_response(at)
+        return self.access_token_response(at, rt)
 
     def password(self, request, data, client):
         """
@@ -500,11 +502,12 @@ class AccessToken(OAuthView, Mixin):
 
         if constants.SINGLE_ACCESS_TOKEN:
             at = self.get_access_token(request, user, scope, client)
+            rt = None
         else:
             at = self.create_access_token(request, user, scope, client)
             rt = self.create_refresh_token(request, user, scope, at, client)
 
-        return self.access_token_response(at)
+        return self.access_token_response(at, rt)
 
     def get_handler(self, grant_type):
         """
