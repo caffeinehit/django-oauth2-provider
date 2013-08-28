@@ -3,7 +3,10 @@ from django.contrib.auth import authenticate
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 from .. import scope
-from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
+from ..constants import (REDIRECT_URI_ENFORCE_PREFIX_ONLY,
+                         RESPONSE_TYPE_CHOICES, 
+                         SCOPES,
+                         )
 from ..forms import OAuthForm, OAuthValidationError
 from ..scope import SCOPE_NAMES
 from ..utils import now
@@ -159,7 +162,14 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
         redirect_uri = self.cleaned_data.get('redirect_uri')
 
         if redirect_uri:
-            if not redirect_uri == self.client.redirect_uri:
+            valid = False
+            if REDIRECT_URI_ENFORCE_PREFIX_ONLY:
+                if redirect_uri.startswith(self.client.redirect_uri):
+                    valid = True 
+            else:
+                if redirect_uri == self.client.redirect_uri:
+                    valid = True 
+            if not valid:
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("The requested redirect didn't "
