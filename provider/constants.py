@@ -30,6 +30,8 @@ EXPIRE_CODE_DELTA = getattr(settings, 'OAUTH_EXPIRE_CODE_DELTA', timedelta(secon
 ENFORCE_SECURE = getattr(settings, 'OAUTH_ENFORCE_SECURE', False)
 ENFORCE_CLIENT_SECURE = getattr(settings, 'OAUTH_ENFORCE_CLIENT_SECURE', True)
 
+REDIRECT_URI_ENFORCE_PREFIX_ONLY = getattr(settings, 'OAUTH_REDIRECT_URI_ENFORCE_PREFIX_ONLY', False)
+
 SESSION_KEY = getattr(settings, 'OAUTH_SESSION_KEY', 'oauth')
 
 SINGLE_ACCESS_TOKEN = getattr(settings, 'OAUTH_SINGLE_ACCESS_TOKEN', False)
