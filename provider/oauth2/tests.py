@@ -349,6 +349,9 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(200, response.status_code, response.content)
         self.assertNotIn('refresh_token', json.loads(response.content))
+        expires_in = json.loads(response.content)['expires_in']
+        expires_in_days = round(expires_in / (60.0 * 60.0 * 24.0))
+        self.assertEqual(expires_in_days, constants.EXPIRE_DELTA_PUBLIC.days)
 
     def test_password_grant_confidential(self):
         c = self.get_client()

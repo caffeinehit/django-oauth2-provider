@@ -49,6 +49,10 @@ class Client(models.Model):
     def __unicode__(self):
         return self.redirect_uri
 
+    def get_default_token_expiry(self):
+        public = (self.client_type == 1)
+        return get_token_expiry(public)
+
 
 class Grant(models.Model):
     """
@@ -100,7 +104,7 @@ class AccessToken(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL)
     token = models.CharField(max_length=255, default=long_token)
     client = models.ForeignKey(Client)
-    expires = models.DateTimeField(default=get_token_expiry)
+    expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
 
@@ -108,6 +112,11 @@ class AccessToken(models.Model):
 
     def __unicode__(self):
         return self.token
+
+    def save(self, *args, **kwargs):
+        if not self.expires:
+            self.expires = self.client.get_default_token_expiry()
+        super(AccessToken, self).save(*args, **kwargs)
 
     def get_expire_delta(self, reference=None):
         """
