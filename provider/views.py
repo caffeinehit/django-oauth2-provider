@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
+from django.core.exceptions import ObjectDoesNotExist
 from . import constants, scope
 
 
@@ -447,13 +448,23 @@ class AccessToken(OAuthView, Mixin):
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
         """
+
+        response_data = {
+            'access_token': access_token.token,
+            'expires_in': access_token.get_expire_delta(),
+            'scope': ' '.join(scope.names(access_token.scope)),
+        }
+
+        # Not all access_tokens are given a refresh_token
+        # (for example, public clients doing password auth)
+        try:
+            rt = access_token.refresh_token
+            response_data['refresh_token'] = rt.token
+        except ObjectDoesNotExist:
+            pass
+
         return HttpResponse(
-            json.dumps({
-                'access_token': access_token.token,
-                'expires_in': access_token.get_expire_delta(),
-                'refresh_token': access_token.refresh_token.token,
-                'scope': ' '.join(scope.names(access_token.scope)),
-            }), mimetype='application/json'
+            json.dumps(response_data), mimetype='application/json'
         )
 
     def authorization_code(self, request, data, client):
@@ -502,7 +513,9 @@ class AccessToken(OAuthView, Mixin):
             at = self.get_access_token(request, user, scope, client)
         else:
             at = self.create_access_token(request, user, scope, client)
-            rt = self.create_refresh_token(request, user, scope, at, client)
+            # Public clients don't get refresh tokens
+            if client.client_type != 1:
+                rt = self.create_refresh_token(request, user, scope, at, client)
 
         return self.access_token_response(at)
 

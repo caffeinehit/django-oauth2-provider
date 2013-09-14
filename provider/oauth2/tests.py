@@ -348,6 +348,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         })
 
         self.assertEqual(200, response.status_code, response.content)
+        self.assertNotIn('refresh_token', json.loads(response.content))
 
     def test_password_grant_confidential(self):
         c = self.get_client()
@@ -363,6 +364,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         })
 
         self.assertEqual(200, response.status_code, response.content)
+        self.assertTrue(json.loads(response.content)['refresh_token'])
 
     def test_password_grant_confidential_no_secret(self):
         c = self.get_client()
