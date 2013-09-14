@@ -2,7 +2,7 @@ import hashlib
 import shortuuid
 from datetime import datetime, tzinfo
 from django.conf import settings
-from .constants import EXPIRE_DELTA, EXPIRE_CODE_DELTA
+from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
 
 try:
     from django.utils import timezone
@@ -35,13 +35,16 @@ def long_token():
     return hash.hexdigest()
 
 
-def get_token_expiry():
+def get_token_expiry(public=True):
     """
     Return a datetime object indicating when an access token should expire.
     Can be customized by setting :attr:`settings.OAUTH_EXPIRE_DELTA` to a
     :attr:`datetime.timedelta` object.
     """
-    return now() + EXPIRE_DELTA
+    if public:
+        return now() + EXPIRE_DELTA_PUBLIC
+    else:
+        return now() + EXPIRE_DELTA
 
 
 def get_code_expiry():

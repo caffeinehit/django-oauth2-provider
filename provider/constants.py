@@ -24,6 +24,8 @@ DEFAULT_SCOPES = (
 SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
 
 EXPIRE_DELTA = getattr(settings, 'OAUTH_EXPIRE_DELTA', timedelta(days=365))
+# Expiry delta for public clients (which typically have shorter lived tokens)
+EXPIRE_DELTA_PUBLIC = getattr(settings, 'OAUTH_EXPIRE_DELTA_PUBLIC', timedelta(days=30))
 
 EXPIRE_CODE_DELTA = getattr(settings, 'OAUTH_EXPIRE_CODE_DELTA', timedelta(seconds=10 * 60))
 
