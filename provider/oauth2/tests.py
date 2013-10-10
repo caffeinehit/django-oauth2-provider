@@ -1,14 +1,18 @@
 import json
 import urlparse
 import datetime
+
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
+from mock import Mock
+
 from .. import constants, scope
 from ..compat import skipIfCustomUser
+from provider.signals import log_in, token_auth
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
@@ -461,3 +465,59 @@ class ScopeTest(TestCase):
         names.sort()
 
         self.assertEqual('read read+write write', ' '.join(names))
+
+
+class SignalsTest(BaseOAuth2TestCase):
+    fixtures = ['test_oauth2']
+
+    def test_basic_client_backend(self):
+        request = type('Request', (object,), {'META': {}})()
+        request.META['HTTP_AUTHORIZATION'] = "Basic " + "{0}:{1}".format(
+            self.get_client().client_id,
+            self.get_client().client_secret).encode('base64')
+
+        on_login = Mock()
+        try:
+            log_in.connect(on_login)
+            client = BasicClientBackend().authenticate(request)
+        finally:
+            log_in.disconnect(on_login)
+
+        self.assertEqual(client.id, 2, "Didn't return the right client.")
+        self.assertEqual(on_login.call_count, 1)
+        self.assertEqual(on_login.call_args[1]['user'], client.user)
+
+    def test_request_params_client_backend(self):
+        request = type('Request', (object,), {'REQUEST': {}})()
+
+        request.REQUEST['client_id'] = self.get_client().client_id
+        request.REQUEST['client_secret'] = self.get_client().client_secret
+
+        on_login = Mock()
+        try:
+            log_in.connect(on_login)
+            client = RequestParamsClientBackend().authenticate(request)
+        finally:
+            log_in.disconnect(on_login)
+
+        self.assertEqual(client.id, 2, "Didn't return the right client.'")
+        self.assertEqual(on_login.call_count, 1)
+        self.assertEqual(on_login.call_args[1]['user'], client.user)
+
+    def test_access_token_backend(self):
+        user = self.get_user()
+        client = self.get_client()
+        backend = AccessTokenBackend()
+        token = AccessToken.objects.create(user=user, client=client)
+
+        on_token_auth = Mock()
+        try:
+            token_auth.connect(on_token_auth)
+            authenticated = backend.authenticate(access_token=token.token,
+                                                 client=client)
+        finally:
+            token_auth.disconnect(on_token_auth)
+
+        self.assertIsNotNone(authenticated)
+        self.assertEqual(on_token_auth.call_count, 1)
+        self.assertEqual(on_token_auth.call_args[1]['user'], user)

@@ -1,3 +1,4 @@
+from provider.signals import log_in, token_auth
 from ..utils import now
 from .forms import ClientAuthForm
 from .models import AccessToken
@@ -36,7 +37,9 @@ class BasicClientBackend(object):
                 'client_secret': client_secret})
 
             if form.is_valid():
-                return form.cleaned_data.get('client')
+                client = form.cleaned_data.get('client')
+                log_in.send(self, user=client.user)
+                return client
             return None
 
         except ValueError:
@@ -56,7 +59,9 @@ class RequestParamsClientBackend(object):
         form = ClientAuthForm(request.REQUEST)
 
         if form.is_valid():
-            return form.cleaned_data.get('client')
+            client = form.cleaned_data.get('client')
+            log_in.send(self, user=client.user)
+            return client
 
         return None
 
@@ -68,7 +73,9 @@ class AccessTokenBackend(object):
 
     def authenticate(self, access_token=None, client=None):
         try:
-            return AccessToken.objects.get(token=access_token,
-                expires__gt=now(), client=client)
+            token = AccessToken.objects.get(token=access_token,
+                                            expires__gt=now(), client=client)
+            token_auth.send(self, user=token.user)
+            return  token
         except AccessToken.DoesNotExist:
             return None

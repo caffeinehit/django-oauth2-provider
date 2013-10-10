@@ -3,6 +3,7 @@
 from setuptools import setup, find_packages
 import provider
 
+
 setup(
     name='django-oauth2-provider',
     version=provider.__version__,
@@ -10,8 +11,8 @@ setup(
     long_description=open('README.rst').read(),
     author='Alen Mujezinovic',
     author_email='alen@caffeinehit.com',
-    url = 'https://github.com/caffeinehit/django-oauth2-provider',
-    packages= find_packages(exclude=('tests*',)),
+    url='https://github.com/caffeinehit/django-oauth2-provider',
+    packages=find_packages(exclude=('tests*',)),
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
