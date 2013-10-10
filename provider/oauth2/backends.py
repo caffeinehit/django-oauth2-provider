@@ -1,3 +1,5 @@
+import base64
+
 from ..utils import now
 from .forms import ClientAuthForm
 from .models import AccessToken
@@ -28,8 +30,8 @@ class BasicClientBackend(object):
             return None
 
         try:
-            basic, base64 = auth.split(' ')
-            client_id, client_secret = base64.decode('base64').split(':')
+            basic, base64_encoded_secret = auth.split(' ')
+            client_id, client_secret = base64_encoded_secret.decode('base64').split(':')
 
             form = ClientAuthForm({
                 'client_id': client_id,
@@ -39,6 +41,9 @@ class BasicClientBackend(object):
                 return form.cleaned_data.get('client')
             return None
 
+        except base64.binascii.Error:
+            # Auth header did not have proper base64 padding
+            return None
         except ValueError:
             # Auth header was malformed, unpacking went wrong
             return None
