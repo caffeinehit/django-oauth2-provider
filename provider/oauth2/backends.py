@@ -76,6 +76,6 @@ class AccessTokenBackend(object):
             token = AccessToken.objects.get(token=access_token,
                                             expires__gt=now(), client=client)
             token_auth.send(self, user=token.user)
-            return  token
+            return token
         except AccessToken.DoesNotExist:
             return None
