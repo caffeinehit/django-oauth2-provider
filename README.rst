@@ -7,4 +7,5 @@ django-oauth2-provider
 customizable OAuth2\-authentication for your Django projects.
 
 `Documentation <http://readthedocs.org/docs/django-oauth2-provider/en/latest/>`_
+
 `Help <https://groups.google.com/d/forum/django-oauth2-provider>`_
