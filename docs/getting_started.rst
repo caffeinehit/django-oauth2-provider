@@ -20,7 +20,7 @@ Add OAuth2 Provider to :attr:`INSTALLED_APPS`
         # ...
         'provider',
         'provider.oauth2',
-    )       
+    )
 
 Modify your settings to match your needs
 ----------------------------------------
@@ -31,14 +31,14 @@ The default settings are available in :attr:`provider.constants`.
 Include the OAuth 2 views
 -------------------------
 
-Add :attr:`provider.oauth2.urls` to your root ``urls.py`` file. 
+Add :attr:`provider.oauth2.urls` to your root ``urls.py`` file.
 
 ::
 
     url(r'^oauth2/', include('provider.oauth2.urls', namespace = 'oauth2')),
-    
-    
-.. note:: The namespace argument is required.    
+
+
+.. note:: The namespace argument is required.
 
 Sync your database
 ------------------
@@ -74,7 +74,7 @@ client needs to submit a :attr:`POST` request to
 
 **Request**
 
-.. sourcecode:: sh 
+.. sourcecode:: sh
 
     $ curl -X POST -d "client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&grant_type=password&username=YOUR_USERNAME&password=YOUR_PASSWORD" http://localhost:8000/oauth2/access_token/
 
@@ -90,7 +90,14 @@ Grant**. All the other ways of acquiring an access token are outlined
 in :rfc:`4`.
 
 .. note:: Remember that you should always use HTTPS for all your OAuth
-	  2 requests otherwise you won't be secured. 
+	  2 requests otherwise you won't be secured.
 
+How to clean up expired data?
+#############################
 
+Run this command clean out expired :attr:`access_tokens`, :attr:`refresh_tokens`, and :attr:`grants`
+
+.. sourcecode:: sh
+
+    $ python manage.py clean_tokens
 
