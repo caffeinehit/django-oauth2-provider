@@ -334,21 +334,79 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual('invalid_grant', json.loads(response.content)['error'],
             response.content)
 
-    def test_password_grant(self):
+    def test_password_grant_public(self):
+        c = self.get_client()
+        c.client_type = 1 # public
+        c.save()
+
         response = self.client.post(self.access_token_url(), {
             'grant_type': 'password',
-            'client_id': self.get_client().client_id,
-            'client_secret': self.get_client().client_secret,
+            'client_id': c.client_id,
+            # No secret needed
             'username': self.get_user().username,
             'password': self.get_password(),
         })
 
         self.assertEqual(200, response.status_code, response.content)
+        self.assertNotIn('refresh_token', json.loads(response.content))
+        expires_in = json.loads(response.content)['expires_in']
+        expires_in_days = round(expires_in / (60.0 * 60.0 * 24.0))
+        self.assertEqual(expires_in_days, constants.EXPIRE_DELTA_PUBLIC.days)
+
+    def test_password_grant_confidential(self):
+        c = self.get_client()
+        c.client_type = 0 # confidential
+        c.save()
 
         response = self.client.post(self.access_token_url(), {
             'grant_type': 'password',
-            'client_id': self.get_client().client_id,
-            'client_secret': self.get_client().client_secret,
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+        })
+
+        self.assertEqual(200, response.status_code, response.content)
+        self.assertTrue(json.loads(response.content)['refresh_token'])
+
+    def test_password_grant_confidential_no_secret(self):
+        c = self.get_client()
+        c.client_type = 0 # confidential
+        c.save()
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+        })
+
+        self.assertEqual('invalid_client', json.loads(response.content)['error'])
+
+    def test_password_grant_invalid_password_public(self):
+        c = self.get_client()
+        c.client_type = 1 # public
+        c.save()
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'username': self.get_user().username,
+            'password': self.get_password() + 'invalid',
+        })
+
+        self.assertEqual(400, response.status_code, response.content)
+        self.assertEqual('invalid_client', json.loads(response.content)['error'])
+
+    def test_password_grant_invalid_password_confidential(self):
+        c = self.get_client()
+        c.client_type = 0 # confidential
+        c.save()
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
             'username': self.get_user().username,
             'password': self.get_password() + 'invalid',
         })

@@ -301,3 +301,34 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
 
         data['user'] = user
         return data
+
+class PublicPasswordGrantForm(PasswordGrantForm):
+    client_id = forms.CharField(required=True)
+    grant_type = forms.CharField(required=True)
+
+    def clean_grant_type(self):
+        grant_type = self.cleaned_data.get('grant_type')
+
+        if grant_type != 'password':
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        return grant_type
+
+    def clean(self):
+        data = super(PublicPasswordGrantForm, self).clean()
+
+        try:
+            client = Client.objects.get(client_id=data.get('client_id'))
+        except Client.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_client'})
+
+        if client.client_type != 1: # public
+            raise OAuthValidationError({'error': 'invalid_client'})
+
+        data['client'] = client
+        return data
+
+
+
+
+
