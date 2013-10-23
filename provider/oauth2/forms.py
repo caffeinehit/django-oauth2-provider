@@ -301,3 +301,9 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
 
         data['user'] = user
         return data
+
+class ClientCredentialsGrantForm(ScopeMixin, OAuthForm):
+    """
+    Validate a client credentials grant request.
+    """
+    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
