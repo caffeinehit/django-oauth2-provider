@@ -5,7 +5,7 @@ from ..views import AccessToken as AccessTokenView, OAuthError
 from ..utils import now
 from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
-from .forms import AuthorizationCodeGrantForm
+from .forms import AuthorizationCodeGrantForm, ClientCredentialsGrantForm
 from .models import Client, RefreshToken, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
 
@@ -86,6 +86,12 @@ class AccessTokenView(AccessTokenView):
 
     def get_password_grant(self, request, data, client):
         form = PasswordGrantForm(data, client=client)
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data
+
+    def get_client_credentials_grant(self, request, data, client):
+        form = ClientCredentialsGrantForm(data, client=client)
         if not form.is_valid():
             raise OAuthError(form.errors)
         return form.cleaned_data
