@@ -164,7 +164,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
         redirect_uri = self.cleaned_data.get('redirect_uri')
 
         if redirect_uri:
-            if not redirect_uri == self.client.redirect_uri:
+            if redirect_uri not in self.client.redirect_uri.split(" "):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("The requested redirect didn't "

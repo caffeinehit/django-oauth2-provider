@@ -25,6 +25,18 @@
     }, 
     {
         "fields": {
+            "redirect_uri": "http://example.com/application/3/ http://example.com/application/4/",
+            "client_id": "67fa429f50ca45386ee4", 
+            "client_secret": "t8k4RB4gYWRAVrTWc58aTsTxXeHThVwkthXeRVeYu4U", 
+            "client_type": 0, 
+            "url": "http://example.com/", 
+            "user": 2
+        }, 
+        "model": "oauth2.client", 
+        "pk": 3
+    }, 
+    {
+        "fields": {
             "date_joined": "2012-01-23 05:44:17", 
             "email": "test-1@example.com", 
             "first_name": "", 

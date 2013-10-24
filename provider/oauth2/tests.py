@@ -34,8 +34,8 @@ class BaseOAuth2TestCase(TestCase):
     def access_token_url(self):
         return reverse('oauth2:access_token')
 
-    def get_client(self):
-        return Client.objects.get(id=2)
+    def get_client(self, id=2):
+        return Client.objects.get(id=id)
 
     def get_grant(self):
         return Grant.objects.all()[0]
@@ -137,6 +137,16 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
             self.get_client().client_id,
             self.get_client().redirect_uri))
+        response = self.client.get(self.auth_url2())
+
+        self.assertEqual(200, response.status_code)
+
+    def test_authorization_multi_redirect_uri(self):
+        self.login()
+
+        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
+            self.get_client(3).client_id,
+            self.get_client(3).redirect_uri.split(" ")[0]))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(200, response.status_code)
