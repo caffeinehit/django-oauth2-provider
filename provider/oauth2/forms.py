@@ -302,6 +302,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         data['user'] = user
         return data
 
+
 class PublicPasswordGrantForm(PasswordGrantForm):
     client_id = forms.CharField(required=True)
     grant_type = forms.CharField(required=True)
@@ -327,8 +328,3 @@ class PublicPasswordGrantForm(PasswordGrantForm):
 
         data['client'] = client
         return data
-
-
-
-
-

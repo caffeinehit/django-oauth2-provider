@@ -1,8 +1,6 @@
-from django.contrib.auth import authenticate
-
 from ..utils import now
 from .forms import ClientAuthForm, PublicPasswordGrantForm
-from .models import AccessToken, Client
+from .models import AccessToken
 
 
 class BaseBackend(object):
@@ -63,25 +61,9 @@ class RequestParamsClientBackend(object):
         return None
 
 
-class RequestParamsClientBackend(object):
-    """
-    Backend that tries to authenticate a client through request parameters
-    which might be in the request body or URI as defined in :rfc:`2.3.1`.
-    """
-    def authenticate(self, request=None):
-        if request is None:
-            return None
-
-        form = ClientAuthForm(request.REQUEST)
-
-        if form.is_valid():
-            return form.cleaned_data.get('client')
-
-        return None
-
 class PublicPasswordBackend(object):
     """
-    Backend that tries to authenticate a client using username, password 
+    Backend that tries to authenticate a client using username, password
     and client ID. This is only available in specific circumstances:
 
      - grant_type is "password"
@@ -98,7 +80,6 @@ class PublicPasswordBackend(object):
             return form.cleaned_data.get('client')
 
         return None
-
 
 
 class AccessTokenBackend(object):
