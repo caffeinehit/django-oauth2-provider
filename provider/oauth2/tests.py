@@ -234,6 +234,8 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
 
     def _login_authorize_get_token(self):
+        required_props = ['access_token', 'token_type']
+
         self.login()
         self._login_and_authorize()
 
@@ -249,7 +251,13 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(200, response.status_code, response.content)
 
-        return json.loads(response.content)
+        token = json.loads(response.content)
+
+        for prop in required_props:
+            self.assertIn(prop, token, "Access token response missing "
+                    "required property: %s" % prop)
+
+        return token
 
     def test_fetching_access_token_with_valid_grant(self):
         self._login_authorize_get_token()
@@ -413,6 +421,10 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code, response.content)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
+
+    def test_access_token_response_valid_token_type(self):
+        token = self._login_authorize_get_token()
+        self.assertEqual(token['token_type'], constants.TOKEN_TYPE, token)
 
 
 class AuthBackendTest(BaseOAuth2TestCase):
