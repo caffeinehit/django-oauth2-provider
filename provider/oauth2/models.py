@@ -70,7 +70,7 @@ class Grant(models.Model):
     client = models.ForeignKey(Client)
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
-    redirect_uri = models.CharField(max_length=255, blank=True)
+    redirect_uri = models.CharField(max_length=1000, blank=True)
     scope = models.IntegerField(default=0)
 
     def __unicode__(self):
