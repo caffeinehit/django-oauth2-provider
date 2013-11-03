@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
@@ -116,13 +117,22 @@ class AccessTokenView(AccessTokenView):
         )
 
     def invalidate_grant(self, grant):
-        grant.expires = now() - timedelta(days=1)
-        grant.save()
+        if getattr(settings, 'OAUTH_CLEAN_EXPIRED', False):
+            grant.delete()
+        else:
+            grant.expires = now() - timedelta(days=1)
+            grant.save()
 
     def invalidate_refresh_token(self, rt):
-        rt.expired = True
-        rt.save()
+        if getattr(settings, 'OAUTH_CLEAN_EXPIRED', False):
+            rt.delete()
+        else:
+            rt.expired = True
+            rt.save()
 
     def invalidate_access_token(self, at):
-        at.expires = now() - timedelta(days=1)
-        at.save()
+        if getattr(settings, 'OAUTH_CLEAN_EXPIRED', False):
+            at.delete()
+        else:
+            at.expires = now() - timedelta(days=1)
+            at.save()
