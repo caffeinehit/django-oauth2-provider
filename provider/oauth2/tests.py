@@ -533,19 +533,15 @@ class ScopeTest(TestCase):
         self.assertEqual('read read+write write', ' '.join(names))
 
 
-class CleanExpiredTest(BaseOAuth2TestCase):
+class DeleteExpiredTest(BaseOAuth2TestCase):
     fixtures = ['test_oauth2']
 
     def setUp(self):
-        self._old_oauth_clean_expired = getattr(settings,
-                                                'OAUTH_CLEAN_EXPIRED', None)
-        settings.OAUTH_CLEAN_EXPIRED = True
+        self._delete_expired = constants.DELETE_EXPIRED
+        constants.DELETE_EXPIRED = True
 
     def tearDown(self):
-        if self._old_oauth_clean_expired is not None:
-            settings.OAUTH_CLEAN_EXPIRED = self._old_oauth_clean_expired
-        else:
-            delattr(settings, 'OAUTH_CLEAN_EXPIRED')
+        constants.DELETE_EXPIRED = self._delete_expired
 
     def test_clear_expired(self):
         self.login()
@@ -562,8 +558,6 @@ class CleanExpiredTest(BaseOAuth2TestCase):
         # verify that Grant with code exists
         code = urlparse.parse_qs(location)['code'][0]
         self.assertTrue(Grant.objects.filter(code=code).exists())
-
-        from pprint import pprint
 
         # use the code/grant
         response = self.client.post(self.access_token_url(), {
