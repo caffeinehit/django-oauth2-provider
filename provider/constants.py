@@ -26,10 +26,14 @@ DEFAULT_SCOPES = (
 SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
 
 EXPIRE_DELTA = getattr(settings, 'OAUTH_EXPIRE_DELTA', timedelta(days=365))
+
 # Expiry delta for public clients (which typically have shorter lived tokens)
 EXPIRE_DELTA_PUBLIC = getattr(settings, 'OAUTH_EXPIRE_DELTA_PUBLIC', timedelta(days=30))
 
 EXPIRE_CODE_DELTA = getattr(settings, 'OAUTH_EXPIRE_CODE_DELTA', timedelta(seconds=10 * 60))
+
+# Remove expired tokens immediately instead of letting them persist.
+DELETE_EXPIRED = getattr(settings, 'OAUTH_DELETE_EXPIRED', False)
 
 ENFORCE_SECURE = getattr(settings, 'OAUTH_ENFORCE_SECURE', False)
 ENFORCE_CLIENT_SECURE = getattr(settings, 'OAUTH_ENFORCE_CLIENT_SECURE', True)

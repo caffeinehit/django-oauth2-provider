@@ -12,7 +12,7 @@ from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
-from .models import Client, Grant, AccessToken
+from .models import Client, Grant, AccessToken, RefreshToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
 
@@ -531,3 +531,71 @@ class ScopeTest(TestCase):
         names.sort()
 
         self.assertEqual('read read+write write', ' '.join(names))
+
+
+class DeleteExpiredTest(BaseOAuth2TestCase):
+    fixtures = ['test_oauth2']
+
+    def setUp(self):
+        self._delete_expired = constants.DELETE_EXPIRED
+        constants.DELETE_EXPIRED = True
+
+    def tearDown(self):
+        constants.DELETE_EXPIRED = self._delete_expired
+
+    def test_clear_expired(self):
+        self.login()
+
+        self._login_and_authorize()
+
+        response = self.client.get(self.redirect_url())
+
+        self.assertEqual(302, response.status_code)
+        location = response['Location']
+        self.assertFalse('error' in location)
+        self.assertTrue('code' in location)
+
+        # verify that Grant with code exists
+        code = urlparse.parse_qs(location)['code'][0]
+        self.assertTrue(Grant.objects.filter(code=code).exists())
+
+        # use the code/grant
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+        self.assertEquals(200, response.status_code)
+        token = json.loads(response.content)
+        self.assertTrue('access_token' in token)
+        access_token = token['access_token']
+        self.assertTrue('refresh_token' in token)
+        refresh_token = token['refresh_token']
+
+        # make sure the grant is gone
+        self.assertFalse(Grant.objects.filter(code=code).exists())
+        # and verify that the AccessToken and RefreshToken exist
+        self.assertTrue(AccessToken.objects.filter(token=access_token)
+                        .exists())
+        self.assertTrue(RefreshToken.objects.filter(token=refresh_token)
+                        .exists())
+
+        # refresh the token
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': token['refresh_token'],
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+        self.assertEqual(200, response.status_code)
+        token = json.loads(response.content)
+        self.assertTrue('access_token' in token)
+        self.assertNotEquals(access_token, token['access_token'])
+        self.assertTrue('refresh_token' in token)
+        self.assertNotEquals(refresh_token, token['refresh_token'])
+
+        # make sure the orig AccessToken and RefreshToken are gone
+        self.assertFalse(AccessToken.objects.filter(token=access_token)
+                         .exists())
+        self.assertFalse(RefreshToken.objects.filter(token=refresh_token)
+                         .exists())

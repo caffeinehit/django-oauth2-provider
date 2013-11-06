@@ -28,7 +28,7 @@
 
     :settings: `OAUTH_EXPIRE_DELTA`
     :default: `datetime.timedelta(days=365)`
-    
+
     The time to expiry for access tokens as outlined in :rfc:`4.2.2` and
     :rfc:`5.1`.
     
@@ -36,9 +36,17 @@
 
     :settings: `OAUTH_EXPIRE_CODE_DELTA`
     :default: `datetime.timedelta(seconds=10*60)`
-    
+
     The time to expiry for an authorization code grant as outlined in :rfc:`4.1.2`.
-    
+
+.. attribute:: DELETE_EXPIRED
+
+    :settings: `OAUTH_DELETE_EXPIRED`
+    :default: `False`
+
+    To remove expired tokens immediately instead of letting them persist, set
+    to `True`.
+
 .. attribute:: ENFORCE_SECURE
 
     :settings: `OAUTH_ENFORCE_SECURE`

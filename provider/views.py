@@ -492,6 +492,7 @@ class AccessToken(OAuthView, Mixin):
         """
         rt = self.get_refresh_token_grant(request, data, client)
 
+        # this must be called first in case we need to purge expired tokens
         self.invalidate_refresh_token(rt)
         self.invalidate_access_token(rt.access_token)
 

@@ -7,7 +7,7 @@ views in :attr:`provider.views`.
 from django.db import models
 from django.conf import settings
 from .. import constants
-from ..constants import CLIENT_TYPES
+from ..constants import CLIENT_TYPES, DELETE_EXPIRED
 from ..utils import short_token, long_token, get_token_expiry
 from ..utils import get_code_expiry
 from ..utils import now
