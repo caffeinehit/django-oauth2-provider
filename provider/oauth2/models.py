@@ -4,6 +4,8 @@ implement these models with fields and and methods to be compatible with the
 views in :attr:`provider.views`.
 """
 
+import datetime
+
 from django.db import models
 from django.conf import settings
 from .. import constants
@@ -44,6 +46,8 @@ class Client(models.Model):
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now, blank=True, null=True)
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now, blank=True, null=True)
 
     def __unicode__(self):
         return self.redirect_uri
@@ -104,6 +108,8 @@ class Grant(models.Model):
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
     scope = models.IntegerField(default=0)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now, blank=True, null=True)
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now, blank=True, null=True)
 
     def __unicode__(self):
         return self.code
@@ -135,6 +141,8 @@ class AccessToken(models.Model):
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now, blank=True, null=True)
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now, blank=True, null=True)
 
     objects = AccessTokenManager()
 
@@ -185,6 +193,8 @@ class RefreshToken(models.Model):
             related_name='refresh_token')
     client = models.ForeignKey(Client)
     expired = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now, blank=True, null=True)
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now, blank=True, null=True)
 
     def __unicode__(self):
         return self.token
