@@ -6,5 +6,5 @@ def validate_uris(value):
     Validates the `value` contains valid space separated urls"
     """
     v = URLValidator()
-    for uri in value.split():
+    for uri in value.split(" "):
         v(uri)
