@@ -289,11 +289,29 @@ class Redirect(OAuthView, Mixin):
     This can be either parameters indicating success or parameters indicating
     an error.
     """
+
+    def error_response(self, error, mimetype='application/json', status=400,
+            **kwargs):
+        """
+        Return an error response to the client with default status code of
+        *400* stating the error as outlined in :rfc:`5.2`.
+        """
+        return HttpResponse(json.dumps(error), mimetype=mimetype,
+                status=status, **kwargs)
+
     def get(self, request):
         data = self.get_data(request)
         code = self.get_data(request, "code")
         error = self.get_data(request, "error")
         client = self.get_data(request, "client")
+
+        # this is an edge case that is caused by making a request with no data
+        # it should only happen if this view is called manually, out of the
+        # normal capture-authorize-redirect flow.
+        if data is None or client is None:
+            return self.error_response({
+                'error': 'invalid_data',
+                'error_description': _('Data has not been captured')})
 
         redirect_uri = data.get('redirect_uri', None) or client.redirect_uri
 
