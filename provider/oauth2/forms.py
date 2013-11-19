@@ -57,7 +57,7 @@ class ScopeChoiceField(forms.ChoiceField):
             return []
 
         if not isinstance(value, (list, tuple)):
-            raise OAuthValidationError({'error': 'invalid_request'})
+            raise OAuthValidationError({'error': 'invalid_request', 'error_description': 'ScopeChoiceField.to_python value was not list'})
 
         # Split values into list
         return u' '.join([smart_unicode(val) for val in value]).split(u' ')
@@ -67,7 +67,7 @@ class ScopeChoiceField(forms.ChoiceField):
         Validates that the input is a list or tuple.
         """
         if self.required and not value:
-            raise OAuthValidationError({'error': 'invalid_request'})
+            raise OAuthValidationError({'error': 'invalid_request', 'error_description': 'ScopeChoiceField.validate required not value'})
 
         # Validate that each value in the value list is in self.choices.
         for val in value:
@@ -197,7 +197,7 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
         token = self.cleaned_data.get('refresh_token')
 
         if not token:
-            raise OAuthValidationError({'error': 'invalid_request'})
+            raise OAuthValidationError({'error': 'invalid_request', 'error_description': 'RefreshTokenGrantForm.clean_refresh_token'})
 
         try:
             token = RefreshToken.objects.get(token=token,
@@ -238,13 +238,13 @@ class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
         code = self.cleaned_data.get('code')
 
         if not code:
-            raise OAuthValidationError({'error': 'invalid_request'})
+            raise OAuthValidationError({'error': 'invalid_request', 'error_description': 'AuthorizationCodeGrantForm.clean_code not code'})
 
         try:
             self.cleaned_data['grant'] = Grant.objects.get(
                 code=code, client=self.client, expires__gt=now())
         except Grant.DoesNotExist:
-            raise OAuthValidationError({'error': 'invalid_grant'})
+            raise OAuthValidationError({'error': 'invalid_grant', 'error_description': 'AuthorizationCodeGrantForm.clean_code Grant.DoesNotExist'})
 
         return code
 
@@ -278,7 +278,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         username = self.cleaned_data.get('username')
 
         if not username:
-            raise OAuthValidationError({'error': 'invalid_request'})
+            raise OAuthValidationError({'error': 'invalid_request', 'error_description': 'PasswordGrantForm.clean_username not username'})
 
         return username
 
@@ -286,7 +286,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         password = self.cleaned_data.get('password')
 
         if not password:
-            raise OAuthValidationError({'error': 'invalid_request'})
+            raise OAuthValidationError({'error': 'invalid_request', 'error_description': 'PasswordGrantForm.clean_password not password'})
 
         return password
 
