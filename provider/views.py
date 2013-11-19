@@ -293,7 +293,7 @@ class Redirect(OAuthView, Mixin):
         data = self.get_data(request)
         code = self.get_data(request, "code")
         error = self.get_data(request, "error")
-        client = self.get_data(request, "client")
+        client = self.get_client(self.get_data(request, "client"))
 
         redirect_uri = data.get('redirect_uri', None) or client.redirect_uri
 
