@@ -11,7 +11,17 @@ from .models import Client, RefreshToken, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
 
 
+class GetClientMixin(object):
+
+    def get_client(self, client_id):
+        try:
+            return Client.objects.get(client_id=client_id)
+        except Client.DoesNotExist:
+            return None
+
+
 class Capture(Capture):
+
     """
     Implementation of :class:`provider.views.Capture`.
     """
@@ -19,7 +29,8 @@ class Capture(Capture):
         return reverse('oauth2:authorize')
 
 
-class Authorize(Authorize):
+class Authorize(GetClientMixin, Authorize):
+
     """
     Implementation of :class:`provider.views.Authorize`.
     """
@@ -28,12 +39,6 @@ class Authorize(Authorize):
 
     def get_authorization_form(self, request, client, data, client_data):
         return AuthorizationForm(data)
-
-    def get_client(self, client_id):
-        try:
-            return Client.objects.get(client_id=client_id)
-        except Client.DoesNotExist:
-            return None
 
     def get_redirect_url(self, request):
         return reverse('oauth2:redirect')
@@ -52,7 +57,8 @@ class Authorize(Authorize):
         return grant.code
 
 
-class Redirect(Redirect):
+class Redirect(GetClientMixin, Redirect):
+
     """
     Implementation of :class:`provider.views.Redirect`
     """
@@ -60,6 +66,7 @@ class Redirect(Redirect):
 
 
 class AccessTokenView(AccessTokenView):
+
     """
     Implementation of :class:`provider.views.AccessToken`.
 

@@ -272,7 +272,7 @@ class Authorize(OAuthView, Mixin):
 
         self.cache_data(request, data)
         self.cache_data(request, code, "code")
-        self.cache_data(request, client, "client")
+        self.cache_data(request, client.client_id, "client")
 
         return HttpResponseRedirect(self.get_redirect_url(request))
 
@@ -303,7 +303,7 @@ class Redirect(OAuthView, Mixin):
         data = self.get_data(request)
         code = self.get_data(request, "code")
         error = self.get_data(request, "error")
-        client = self.get_data(request, "client")
+        client = self.get_client(self.get_data(request, "client"))
 
         # this is an edge case that is caused by making a request with no data
         # it should only happen if this view is called manually, out of the
