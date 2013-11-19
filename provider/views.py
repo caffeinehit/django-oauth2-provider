@@ -272,7 +272,7 @@ class Authorize(OAuthView, Mixin):
 
         self.cache_data(request, data)
         self.cache_data(request, code, "code")
-        self.cache_data(request, client, "client")
+        self.cache_data(request, client.client_id, "client")
 
         return HttpResponseRedirect(self.get_redirect_url(request))
 

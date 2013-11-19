@@ -11,6 +11,7 @@ from .models import Client, Grant, RefreshToken
 
 
 class ClientForm(forms.ModelForm):
+
     """
     Form to create new consumers.
     """
@@ -24,6 +25,7 @@ class ClientForm(forms.ModelForm):
 
 
 class ClientAuthForm(forms.Form):
+
     """
     Client authentication form. Required to make sure that we're dealing with a
     real client. Form is used in :attr:`provider.oauth2.backends` to validate
@@ -36,16 +38,17 @@ class ClientAuthForm(forms.Form):
         data = self.cleaned_data
         try:
             client = Client.objects.get(client_id=data.get('client_id'),
-                client_secret=data.get('client_secret'))
+                                        client_secret=data.get('client_secret'))
         except Client.DoesNotExist:
             raise forms.ValidationError(_("Client could not be validated with "
-                "key pair."))
+                                          "key pair."))
 
         data['client'] = client
         return data
 
 
 class ScopeChoiceField(forms.ChoiceField):
+
     """
     Custom form field that seperates values on space as defined in
     :rfc:`3.3`.
@@ -74,11 +77,12 @@ class ScopeChoiceField(forms.ChoiceField):
             if not self.valid_value(val):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
-                    'error_description': _("'%s' is not a valid scope.") % \
-                            val})
+                    'error_description': _("'%s' is not a valid scope.") %
+                    val})
 
 
 class ScopeMixin(object):
+
     """
     Form mixin to clean scope fields.
     """
@@ -99,6 +103,7 @@ class ScopeMixin(object):
 
 
 class AuthorizationRequestForm(ScopeMixin, OAuthForm):
+
     """
     This form is used to validate the request data that the authorization
     endpoint receives from clients.
@@ -138,7 +143,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
         if not response_type:
             raise OAuthValidationError({'error': 'invalid_request',
-                'error_description': "No 'response_type' supplied."})
+                                        'error_description': "No 'response_type' supplied."})
 
         types = response_type.split(" ")
 
@@ -147,7 +152,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
                 raise OAuthValidationError({
                     'error': 'unsupported_response_type',
                     'error_description': u"'%s' is not a supported response "
-                        "type." % type})
+                    "type." % type})
 
         return response_type
 
@@ -163,12 +168,13 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("The requested redirect didn't "
-                        "match the client settings.")})
+                                           "match the client settings.")})
 
         return redirect_uri
 
 
 class AuthorizationForm(ScopeMixin, OAuthForm):
+
     """
     A form used to ask the resource owner for authorization of a given client.
     """
@@ -187,6 +193,7 @@ class AuthorizationForm(ScopeMixin, OAuthForm):
 
 
 class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
+
     """
     Checks and returns a refresh token.
     """
@@ -201,7 +208,7 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
 
         try:
             token = RefreshToken.objects.get(token=token,
-                expired=False, client=self.client)
+                                             expired=False, client=self.client)
         except RefreshToken.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_grant'})
 
@@ -228,6 +235,7 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
 
 
 class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
+
     """
     Check and return an authorization grant.
     """
@@ -267,6 +275,7 @@ class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
 
 
 class PasswordGrantForm(ScopeMixin, OAuthForm):
+
     """
     Validate the password of a user on a password grant request.
     """
@@ -294,7 +303,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         data = self.cleaned_data
 
         user = authenticate(username=data.get('username'),
-            password=data.get('password'))
+                            password=data.get('password'))
 
         if user is None:
             raise OAuthValidationError({'error': 'invalid_grant'})
@@ -323,7 +332,7 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         except Client.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_client'})
 
-        if client.client_type != 1: # public
+        if client.client_type != 1:  # public
             raise OAuthValidationError({'error': 'invalid_client'})
 
         data['client'] = client
