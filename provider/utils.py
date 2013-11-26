@@ -1,4 +1,3 @@
-import json
 import hashlib
 import shortuuid
 from datetime import datetime, tzinfo
@@ -9,6 +8,11 @@ from django.db.models.fields import (DateTimeField, DateField,
                                      FieldDoesNotExist)
 from django.core.serializers.json import DjangoJSONEncoder
 from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
+
+try:
+    import json
+except ImporError:
+    import simplejson as json
 
 try:
     from django.utils import timezone
