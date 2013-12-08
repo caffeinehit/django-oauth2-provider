@@ -10,6 +10,11 @@ See :class:`provider.scope.to_int` on how scopes are combined.
 
 from .constants import SCOPES
 
+try:
+    reduce = reduce
+except NameError:  # py3k
+    from functools import reduce
+
 SCOPE_NAMES = [(name, name) for (value, name) in SCOPES]
 SCOPE_NAME_DICT = dict([(name, value) for (value, name) in SCOPES])
 SCOPE_VALUE_DICT = dict([(value, name) for (value, name) in SCOPES])
@@ -71,9 +76,14 @@ def to_names(scope):
         >>> assert ['read', 'write'] == provider.scope.names(provider.constants.READ_WRITE)
 
     """
+    try:
+        dict_items = SCOPE_NAME_DICT.iteritems()
+    except AttributeError:  # py3k
+        dict_items = SCOPE_NAME_DICT.items()
+
     return [
         name
-        for (name, value) in SCOPE_NAME_DICT.iteritems()
+        for (name, value) in dict_items
         if check(value, scope)
     ]
 

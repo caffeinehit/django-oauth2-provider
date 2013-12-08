@@ -1,5 +1,4 @@
 import json
-import urlparse
 import datetime
 from django.http import QueryDict
 from django.conf import settings
@@ -15,7 +14,10 @@ from .forms import ClientForm
 from .models import Client, Grant, AccessToken, RefreshToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
-
+try:
+    import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 @skipIfCustomUser
 class BaseOAuth2TestCase(TestCase):

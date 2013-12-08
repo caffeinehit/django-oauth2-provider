@@ -1,5 +1,10 @@
 import json
-import urlparse
+
+try:
+    import urlparse
+except ImportError:  # py3k
+    from urllib.parse import urlparse
+
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
