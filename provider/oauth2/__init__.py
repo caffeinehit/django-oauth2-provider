@@ -1,6 +1,1 @@
-import backends
-import forms
-import managers
-import models
-import urls
-import views
+from provider.oauth2 import backends, forms, managers, models, urls, views
