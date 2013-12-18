@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
+from oauth2.models import Client
 from . import constants, scope
 
 
@@ -260,7 +261,6 @@ class Authorize(OAuthView, Mixin):
         authorization_form = self.get_authorization_form(request, client,
             post_data, data)
 
-
         if not authorization_form.is_bound or not authorization_form.is_valid():
             return self.render_to_response({
                 'client': client,
@@ -270,9 +270,11 @@ class Authorize(OAuthView, Mixin):
         code = self.save_authorization(request, client,
             authorization_form, data)
 
+        # be sure to serialize any objects that aren't natively json
+        # serializable because these values are stored as session data
         self.cache_data(request, data)
         self.cache_data(request, code, "code")
-        self.cache_data(request, client, "client")
+        self.cache_data(request, client.serialize(), "client")
 
         return HttpResponseRedirect(self.get_redirect_url(request))
 
@@ -304,6 +306,9 @@ class Redirect(OAuthView, Mixin):
         code = self.get_data(request, "code")
         error = self.get_data(request, "error")
         client = self.get_data(request, "client")
+
+        # client must be properly deserialized to become a valid instance
+        client = Client.deserialize(client)
 
         # this is an edge case that is caused by making a request with no data
         # it should only happen if this view is called manually, out of the

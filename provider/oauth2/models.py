@@ -7,10 +7,9 @@ views in :attr:`provider.views`.
 from django.db import models
 from django.conf import settings
 from .. import constants
-from ..constants import CLIENT_TYPES, DELETE_EXPIRED
-from ..utils import short_token, long_token, get_token_expiry
-from ..utils import get_code_expiry
-from ..utils import now
+from ..constants import CLIENT_TYPES
+from ..utils import now, short_token, long_token, get_code_expiry
+from ..utils import get_token_expiry, serialize_instance, deserialize_instance
 from .managers import AccessTokenManager
 
 try:
@@ -52,6 +51,35 @@ class Client(models.Model):
     def get_default_token_expiry(self):
         public = (self.client_type == 1)
         return get_token_expiry(public)
+
+    def serialize(self):
+        return dict(user=serialize_instance(self.user),
+                    name=self.name,
+                    url=self.url,
+                    redirect_uri=self.redirect_uri,
+                    client_id=self.client_id,
+                    client_secret=self.client_secret,
+                    client_type=self.client_type)
+
+    @classmethod
+    def deserialize(cls, data):
+        if not data:
+            return None
+
+        kwargs = {}
+
+        # extract values that we care about
+        for field in cls._meta.fields:
+            name = field.name
+            val = data.get(field.name, None)
+
+            # handle relations
+            if val and field.rel:
+                val = deserialize_instance(field.rel.to, val)
+
+            kwargs[name] = val
+
+        return cls(**kwargs)
 
 
 class Grant(models.Model):
