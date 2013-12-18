@@ -6,8 +6,6 @@ views in :attr:`provider.views`.
 
 from django.db import models
 from django.conf import settings
-from django.core import serializers
-from django.contrib.auth import get_user_model
 from .. import constants
 from ..constants import CLIENT_TYPES, DELETE_EXPIRED
 from ..utils import now, short_token, long_token, get_code_expiry
