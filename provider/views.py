@@ -277,7 +277,7 @@ class Authorize(OAuthView, Mixin):
                                                 client=client,
                                                 scope=data.get('scope'))
                 at = AccessToken()
-                return at.access_token_response(atm)
+                return at.access_token_response(atm, data)
 
         code = self.save_authorization(request, client,
             authorization_form, data)
@@ -478,7 +478,7 @@ class AccessToken(OAuthView, Mixin):
         return HttpResponse(json.dumps(error), mimetype=mimetype,
                 status=status, **kwargs)
 
-    def access_token_response(self, access_token):
+    def access_token_response(self, access_token, data=None):
         """
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
@@ -498,6 +498,13 @@ class AccessToken(OAuthView, Mixin):
             response_data['refresh_token'] = rt.token
         except ObjectDoesNotExist:
             pass
+
+        if data.get('response_type') == 'token':
+            if len(data.get('state', '')) > 0:
+                response_data['state'] = data.get('state')
+            path = "%s?%s" % (data.get('redirect_uri'), 
+                              urlencode(response_data))                       
+            return HttpResponseRedirect(path)
 
         return HttpResponse(
             json.dumps(response_data), mimetype='application/json'
