@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
+from django.contrib.auth.models import User
 from .. import scope
 from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
 from ..forms import OAuthForm, OAuthValidationError
@@ -286,6 +287,51 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
             raise OAuthValidationError({'error': 'invalid_request'})
 
         return username
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+
+        if not password:
+            raise OAuthValidationError({'error': 'invalid_request'})
+
+        return password
+
+    def clean(self):
+        data = self.cleaned_data
+
+        user = authenticate(username=data.get('username'),
+            password=data.get('password'))
+
+        if user is None:
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        data['user'] = user
+        return data
+
+
+class EmailAndPasswordGrantForm(ScopeMixin, OAuthForm):
+    """
+    Validate the password of a user on a email_and_password grant
+    request. Modified from PasswordGrantForm to use email addresses
+    in place of usernames.
+    """
+    email = forms.CharField(required=False)
+    username = forms.CharField(required=False)
+    password = forms.CharField(required=False)
+    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+
+    def clean_username(self):
+        email = self.cleaned_data.get('email')
+
+        if not email:
+            raise OAuthValidationError({'error': 'invalid_request'})
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_request'})
+
+        return user.username
 
     def clean_password(self):
         password = self.cleaned_data.get('password')
