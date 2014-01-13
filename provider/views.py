@@ -499,13 +499,6 @@ class AccessToken(OAuthView, Mixin):
         except ObjectDoesNotExist:
             pass
 
-        if data.get('response_type') == 'token':
-            if len(data.get('state', '')) > 0:
-                response_data['state'] = data.get('state')
-            path = "%s?%s" % (data.get('redirect_uri'), 
-                              urlencode(response_data))                       
-            return HttpResponseRedirect(path)
-
         return HttpResponse(
             json.dumps(response_data), mimetype='application/json'
         )
