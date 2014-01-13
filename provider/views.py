@@ -478,7 +478,7 @@ class AccessToken(OAuthView, Mixin):
         return HttpResponse(json.dumps(error), mimetype=mimetype,
                 status=status, **kwargs)
 
-    def access_token_response(self, access_token, data=None):
+    def access_token_response(self, access_token):
         """
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
