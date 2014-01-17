@@ -499,10 +499,13 @@ class AccessToken(OAuthView, Mixin):
         except ObjectDoesNotExist:
             pass
 
-        if data.get('response_type') == 'token':
+        if data is not None and data.get('response_type') == 'token':
+            basepath = data.get("redirect_uri")
+            if not basepath:
+                basepath = access_token.client.redirect_uri
             if len(data.get('state', '')) > 0:
                 response_data['state'] = data.get('state')
-            path = "%s?%s" % (data.get('redirect_uri'), 
+            path = "%s#%s" % (basepath, 
                               urlencode(response_data))                       
             return HttpResponseRedirect(path)
 
