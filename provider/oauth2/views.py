@@ -40,13 +40,14 @@ class Authorize(Authorize):
 
     def reuse_authorization(self, request, client, client_data):
 
-        try:
-            AccessToken.objects.get(
-                user=request.user,
-                client=client,
-                scope__gte=client_data.get('scope'),
-                expires__gt=now()
-            )
+        has_access_token = AccessToken.objects.filter(
+            user=request.user,
+            client=client,
+            scope__gte=client_data.get('scope'),
+            expires__gt=now()
+            ).exists()
+
+        if has_access_token:
 
             grant = Grant.objects.create(
                 user=request.user,
@@ -57,7 +58,7 @@ class Authorize(Authorize):
 
             return grant.code
 
-        except AccessToken.DoesNotExist:
+        else:
             return None
 
     def save_authorization(self, request, client, form, client_data):
