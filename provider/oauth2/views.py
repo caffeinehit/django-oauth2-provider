@@ -7,7 +7,7 @@ from ..utils import now
 from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
-from .models import Client, RefreshToken, AccessToken
+from .models import Client, RefreshToken, AccessToken, Grant
 from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
 
 
@@ -37,6 +37,28 @@ class Authorize(Authorize):
 
     def get_redirect_url(self, request):
         return reverse('oauth2:redirect')
+
+    def reuse_authorization(self, request, client, client_data):
+
+        try:
+            AccessToken.objects.get(
+                user=request.user,
+                client=client,
+                scope__gte=client_data.get('scope'),
+                expires__gt=now()
+            )
+
+            grant = Grant.objects.create(
+                user=request.user,
+                client=client,
+                scope=client_data.get('scope'),
+                redirect_uri=client_data.get('redirect_uri', '')
+            )
+
+            return grant.code
+
+        except AccessToken.DoesNotExist:
+            return None
 
     def save_authorization(self, request, client, form, client_data):
 

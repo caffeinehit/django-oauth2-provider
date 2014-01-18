@@ -135,6 +135,11 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
     The scope that the authorization should include.
     """
 
+    approval_prompt = forms.CharField(required=False)
+    """
+    Force usage of the approval prompt, or bypass it if a valid access token exists.
+    """
+
     def clean_response_type(self):
         """
         :rfc:`3.1.1` Lists of values are space delimited.
@@ -171,6 +176,25 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
                         "match the client settings.")})
 
         return redirect_uri
+
+    def clean_approval_prompt(self):
+        """
+        Accepts "force" and "auto". Defaults to "force" for backwards compatibility.
+        """
+
+        approval_prompt = self.cleaned_data.get('approval_prompt')
+
+        if not approval_prompt:
+            approval_prompt = 'force'
+
+        if approval_prompt not in ["force", "auto"]:
+            raise OAuthValidationError({
+                'error': 'unsupported_approval_prompt',
+                'error_description':
+                u"'%s' is not a supported approval prompt " % approval_prompt
+            })
+
+        return approval_prompt
 
 
 class AuthorizationForm(ScopeMixin, OAuthForm):

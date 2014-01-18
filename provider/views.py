@@ -186,6 +186,17 @@ class Authorize(OAuthView, Mixin):
         """
         raise NotImplementedError
 
+    def reuse_authorization(self, request, client, client_data):
+        """
+        Return existing authorization code grant if the request matches a
+        previously granted (and still active) access token.
+
+        Used to implement the approval_prompt parameter used in Google's OAUTH2.
+
+        :return: ``None``, ``str``
+        """
+        raise NotImplementedError
+
     def save_authorization(self, request, client, form, client_data):
         """
         Save the authorization that the user granted to the client, involving
@@ -258,17 +269,24 @@ class Authorize(OAuthView, Mixin):
         except OAuthError, e:
             return self.error_response(request, e.args[0], status=400)
 
-        authorization_form = self.get_authorization_form(request, client,
-            post_data, data)
+        code = None
 
-        if not authorization_form.is_bound or not authorization_form.is_valid():
-            return self.render_to_response({
-                'client': client,
-                'form': authorization_form,
-                'oauth_data': data, })
+        if constants.ENABLE_APPROVAL_PROMPT_BYPASS and \
+                data.get('approval_prompt', 'force') == 'auto':
+            code = self.reuse_authorization(request, client, data)
 
-        code = self.save_authorization(request, client,
-            authorization_form, data)
+        if code is None:
+            authorization_form = self.get_authorization_form(request, client,
+                post_data, data)
+
+            if not authorization_form.is_bound or not authorization_form.is_valid():
+                return self.render_to_response({
+                    'client': client,
+                    'form': authorization_form,
+                    'oauth_data': data, })
+
+            code = self.save_authorization(request, client,
+                authorization_form, data)
 
         # be sure to serialize any objects that aren't natively json
         # serializable because these values are stored as session data
