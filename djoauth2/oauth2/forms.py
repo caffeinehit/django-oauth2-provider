@@ -297,6 +297,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
     def clean(self):
         data = self.cleaned_data
 
+        import ipdb; ipdb.set_trace()
         user = authenticate(username=data.get('username'),
             password=data.get('password'))
 
@@ -308,6 +309,9 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
 
 
 class PublicPasswordGrantForm(PasswordGrantForm):
+    """
+    Validates username, password, client
+    """
     client_id = forms.CharField(required=True)
     grant_type = forms.CharField(required=True)
 
@@ -320,8 +324,10 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         return grant_type
 
     def clean(self):
+        # check username + password
         data = super(PublicPasswordGrantForm, self).clean()
 
+        # Check client
         try:
             client = Client.objects.get(client_id=data.get('client_id'))
         except Client.DoesNotExist:
@@ -329,6 +335,9 @@ class PublicPasswordGrantForm(PasswordGrantForm):
 
         if client.client_type != 1: # public
             raise OAuthValidationError({'error': 'invalid_client'})
+
+        # check if username has access to client
+        import ipdb; ipdb.set_trace()
 
         data['client'] = client
         return data

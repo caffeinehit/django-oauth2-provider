@@ -80,7 +80,9 @@ class Mixin(object):
         Authenticate a client against all the backends configured in
         :attr:`authentication`.
         """
+
         for backend in self.authentication:
+
             client = backend().authenticate(request)
             if client is not None:
                 return client
