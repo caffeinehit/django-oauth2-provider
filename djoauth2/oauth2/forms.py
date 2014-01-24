@@ -297,7 +297,6 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
     def clean(self):
         data = self.cleaned_data
 
-        import ipdb; ipdb.set_trace()
         user = authenticate(username=data.get('username'),
             password=data.get('password'))
 
