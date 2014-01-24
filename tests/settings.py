@@ -58,5 +58,6 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'djoauth2',
     'djoauth2.oauth2',
+    'south'
 )
 
