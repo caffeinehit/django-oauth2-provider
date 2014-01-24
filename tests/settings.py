@@ -56,7 +56,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'provider',
-    'provider.oauth2',
+    'djoauth2',
+    'djoauth2.oauth2',
 )
 
