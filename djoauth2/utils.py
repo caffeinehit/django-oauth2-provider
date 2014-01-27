@@ -9,6 +9,7 @@ from django.db.models.fields import (DateTimeField, DateField,
 from django.core.serializers.json import DjangoJSONEncoder
 from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
 import importlib
+from django.db import models
 
 try:
     import json
@@ -105,6 +106,8 @@ def import_resolver(name):
     mod_name = '.'.join(components[:-1])
     klass_name = components[-1]
     mod = importlib.import_module(mod_name)
+
     return getattr(mod, klass_name)
+
 
 

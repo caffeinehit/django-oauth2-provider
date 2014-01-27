@@ -84,7 +84,10 @@ class BasicClient(models.Model):
 
         return cls(**kwargs)
 
-Client = import_resolver(CLIENT_MODEL)
+try:
+    Client = import_resolver(CLIENT_MODEL)
+except AttributeError:
+    Client = BasicClient
 
 class Grant(models.Model):
     """
