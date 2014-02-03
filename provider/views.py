@@ -277,7 +277,7 @@ class Authorize(OAuthView, Mixin):
                                                 client=client,
                                                 scope=data.get('scope'))
                 at = AccessToken()
-                return at.access_token_response(atm)
+                return at.access_token_response(atm, data)
 
         code = self.save_authorization(request, client,
             authorization_form, data)
