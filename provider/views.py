@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
 from oauth2.models import AccessToken as AccessTokenModel
 from . import constants, scope
+from django.utils.http import urlencode
 
 
 class OAuthError(Exception):
