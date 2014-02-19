@@ -563,9 +563,12 @@ class AccessToken(OAuthView, Mixin):
         As per :rfc:`3.2` the token endpoint *only* supports POST requests.
         Returns an error response.
         """
-        return self.error_response({
+        error = self.error_response({
             'error': 'invalid_request',
-            'error_description': _("Only POST requests allowed.")})
+            'error_description': _("Only POST requests allowed.")}, status=405)
+        error['Allow'] = 'POST'
+        return error
+
 
     def post(self, request):
         """
