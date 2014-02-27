@@ -80,6 +80,7 @@ def serialize_instance(instance):
     ret = dict([(k, v)
                 for k, v in list(instance.__dict__.items())
                 if not k.startswith('_')])
+
     return json.loads(json.dumps(ret, cls=DjangoJSONEncoder))
 
 

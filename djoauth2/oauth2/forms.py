@@ -335,8 +335,5 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         if client.client_type != 1: # public
             raise OAuthValidationError({'error': 'invalid_client'})
 
-        # check if username has access to client
-        import ipdb; ipdb.set_trace()
-
         data['client'] = client
         return data

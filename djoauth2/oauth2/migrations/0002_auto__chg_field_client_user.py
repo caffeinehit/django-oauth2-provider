@@ -4,7 +4,7 @@ from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
 
-from oauth2provider.compat import user_model_label
+from djoauth2.compat import user_model_label
 
 
 class Migration(SchemaMigration):

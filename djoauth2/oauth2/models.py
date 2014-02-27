@@ -56,7 +56,7 @@ class BasicClient(models.Model):
         return get_token_expiry(public)
 
     def serialize(self):
-        return dict(user=serialize_instance(self.user),
+        return dict(users=[serialize_instance(x) for x in self.users.all()],
                     name=self.name,
                     url=self.url,
                     redirect_uri=self.redirect_uri,

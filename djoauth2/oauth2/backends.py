@@ -1,6 +1,7 @@
 from ..utils import now
 from .forms import ClientAuthForm, PublicPasswordGrantForm
 from .models import AccessToken
+import base64
 
 
 class BaseBackend(object):
@@ -28,8 +29,10 @@ class BasicClientBackend(object):
             return None
 
         try:
-            basic, base64 = auth.split(' ')
-            client_id, client_secret = base64.decode('base64').split(':')
+            basic, b64string = auth.decode("utf-8").split(' ')
+            s = base64.b64decode(b64string).decode("utf-8")
+            client_id, client_secret = s.split(':')
+
 
             form = ClientAuthForm({
                 'client_id': client_id,
