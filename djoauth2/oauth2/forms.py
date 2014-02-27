@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib.auth import authenticate
-from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 from .. import scope
 from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
@@ -65,7 +64,7 @@ class ScopeChoiceField(forms.ChoiceField):
             value = value.split(' ')
 
         # Split values into list
-        return u' '.join([smart_unicode(val) for val in value]).split(u' ')
+        return value
 
     def validate(self, value):
         """
@@ -151,7 +150,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
             if type not in RESPONSE_TYPE_CHOICES:
                 raise OAuthValidationError({
                     'error': 'unsupported_response_type',
-                    'error_description': u"'%s' is not a supported response "
+                    'error_description': "'%s' is not a supported response "
                         "type." % type})
 
         return response_type
@@ -309,6 +308,9 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
 
 
 class PublicPasswordGrantForm(PasswordGrantForm):
+    """
+    Validates username, password, client
+    """
     client_id = forms.CharField(required=True)
     grant_type = forms.CharField(required=True)
 
@@ -321,8 +323,10 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         return grant_type
 
     def clean(self):
+        # check username + password
         data = super(PublicPasswordGrantForm, self).clean()
 
+        # Check client
         try:
             client = Client.objects.get(client_id=data.get('client_id'))
         except Client.DoesNotExist:

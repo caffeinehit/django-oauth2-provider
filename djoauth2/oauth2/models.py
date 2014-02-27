@@ -11,6 +11,7 @@ from ..constants import CLIENT_TYPES
 from ..utils import now, short_token, long_token, get_code_expiry
 from ..utils import get_token_expiry, serialize_instance, deserialize_instance
 from .managers import AccessTokenManager
+from djoauth2.utils import import_resolver
 
 try:
     from django.utils import timezone
@@ -18,11 +19,12 @@ except ImportError:
     timezone = None
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
+CLIENT_MODEL = getattr(settings, 'OAUTH2_CLIENT_MODEL', 'djoauth2.oauth2.models.BasicClient')
 
 
-class Client(models.Model):
+class BasicClient(models.Model):
     """
-    Default client implementation.
+    Implements Client model
 
     Expected fields:
 
@@ -35,9 +37,10 @@ class Client(models.Model):
     * :attr:`client_type`
 
     Clients are outlined in the :rfc:`2` and its subsections.
+
     """
-    user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
-        blank=True, null=True)
+
+    users = models.ManyToManyField(AUTH_USER_MODEL, related_name='oauth2_clients', blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
@@ -45,15 +48,15 @@ class Client(models.Model):
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
 
-    def __unicode__(self):
-        return self.redirect_uri
+    def __str__(self):
+        return self.name
 
     def get_default_token_expiry(self):
         public = (self.client_type == 1)
         return get_token_expiry(public)
 
     def serialize(self):
-        return dict(user=serialize_instance(self.user),
+        return dict(users=[serialize_instance(x) for x in self.users.all()],
                     name=self.name,
                     url=self.url,
                     redirect_uri=self.redirect_uri,
@@ -81,6 +84,10 @@ class Client(models.Model):
 
         return cls(**kwargs)
 
+try:
+    Client = import_resolver(CLIENT_MODEL)
+except AttributeError:
+    Client = BasicClient
 
 class Grant(models.Model):
     """

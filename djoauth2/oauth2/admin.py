@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AccessToken, Grant, Client, RefreshToken
+from .models import AccessToken, Grant, BasicClient, RefreshToken, Client
 
 
 class AccessTokenAdmin(admin.ModelAdmin):
@@ -18,5 +18,7 @@ class ClientAdmin(admin.ModelAdmin):
 
 admin.site.register(AccessToken, AccessTokenAdmin)
 admin.site.register(Grant, GrantAdmin)
-admin.site.register(Client, ClientAdmin)
+if Client == BasicClient:
+    # Only if we are not overriding the BasicClient
+    admin.site.register(BasicClient, ClientAdmin)
 admin.site.register(RefreshToken)

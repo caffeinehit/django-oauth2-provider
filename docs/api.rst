@@ -1,14 +1,14 @@
 
-`provider`
+`djoauth2`
 ==========
 
-`provider.constants`
+`djoauth2.constants`
 --------------------
-.. automodule:: provider.constants
+.. automodule:: djoauth2.constants
     :members:
     :no-undoc-members:
 
-.. currentmodule:: provider.constants
+.. currentmodule:: djoauth2.constants
 
 .. attribute:: RESPONSE_TYPE_CHOICES
 
@@ -21,7 +21,7 @@
     :settings: `OAUTH_SCOPES`
 
     A choice of scopes. A detailed implementation is left to the developer.
-    The current default implementation in :attr:`provider.oauth2.scope` makes
+    The current default implementation in :attr:`djoauth2.oauth2.scope` makes
     use of bit shifting operations to combine read and write permissions.
 
 .. attribute:: EXPIRE_DELTA
@@ -67,63 +67,63 @@
     :settings: `OAUTH_SINGLE_ACCESS_TOKEN`
     :default: `False`
 
-    To have the provider only create and retrieve one access token per
+    To have the djoauth2 only create and retrieve one access token per
     user/client/scope combination, set to `True`.
 
-`provider.forms`
+`djoauth2.forms`
 ----------------
-.. automodule:: provider.forms
+.. automodule:: djoauth2.forms
     :members:
     :no-undoc-members:
 
-`provider.scope`
+`djoauth2.scope`
 -----------------------
-.. automodule:: provider.scope
+.. automodule:: djoauth2.scope
     :members:
     :no-undoc-members:
 
-`provider.templatetags.scope`
+`djoauth2.templatetags.scope`
 -----------------------------
-.. automodule:: provider.templatetags.scope
+.. automodule:: djoauth2.templatetags.scope
     :members:
     :no-undoc-members:
 
-`provider.utils`
+`djoauth2.utils`
 ----------------
-.. automodule:: provider.utils
+.. automodule:: djoauth2.utils
     :members:
     :no-undoc-members:
 
-`provider.views`
+`djoauth2.views`
 ----------------
-.. automodule:: provider.views
+.. automodule:: djoauth2.views
     :members:
     :no-undoc-members:
 
 
-`provider.oauth2`
+`djoauth2.oauth2`
 =================
 
-`provider.oauth2.forms`
+`djoauth2.oauth2.forms`
 -----------------------
-.. automodule:: provider.oauth2.forms
+.. automodule:: djoauth2.oauth2.forms
     :members:
     :no-undoc-members:
 
-`provider.oauth2.models`
+`djoauth2.oauth2.models`
 ------------------------
-.. automodule:: provider.oauth2.models
+.. automodule:: djoauth2.oauth2.models
     :members:
     :no-undoc-members:
 
-`provider.oauth2.urls`
+`djoauth2.oauth2.urls`
 ----------------------
-.. automodule:: provider.oauth2.urls
+.. automodule:: djoauth2.oauth2.urls
     :members:
     :no-undoc-members:
 
-`provider.oauth2.views`
+`djoauth2.oauth2.views`
 -----------------------
-.. automodule:: provider.oauth2.views
+.. automodule:: djoauth2.oauth2.views
     :members:
     :no-undoc-members:

@@ -8,10 +8,12 @@ from django.db.models.fields import (DateTimeField, DateField,
                                      FieldDoesNotExist)
 from django.core.serializers.json import DjangoJSONEncoder
 from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
+import importlib
+from django.db import models
 
 try:
     import json
-except ImporError:
+except ImportError:
     import simplejson as json
 
 try:
@@ -31,8 +33,8 @@ def short_token():
     """
     Generate a hash that can be used as an application identifier
     """
-    hash = hashlib.sha1(shortuuid.uuid())
-    hash.update(settings.SECRET_KEY)
+    hash = hashlib.sha1(shortuuid.uuid().encode("utf-8"))
+    hash.update(settings.SECRET_KEY.encode("utf-8"))
     return hash.hexdigest()[::2]
 
 
@@ -40,8 +42,8 @@ def long_token():
     """
     Generate a hash that can be used as an application secret
     """
-    hash = hashlib.sha1(shortuuid.uuid())
-    hash.update(settings.SECRET_KEY)
+    hash = hashlib.sha1(shortuuid.uuid().encode("utf-8"))
+    hash.update(settings.SECRET_KEY.encode("utf-8"))
     return hash.hexdigest()
 
 
@@ -76,15 +78,16 @@ def serialize_instance(instance):
     Serialization will start complaining about missing relations et al.
     """
     ret = dict([(k, v)
-                for k, v in instance.__dict__.items()
+                for k, v in list(instance.__dict__.items())
                 if not k.startswith('_')])
+
     return json.loads(json.dumps(ret, cls=DjangoJSONEncoder))
 
 
 def deserialize_instance(model, data={}):
     "Translate raw data into a model instance."
     ret = model()
-    for k, v in data.items():
+    for k, v in list(data.items()):
         if v is not None:
             try:
                 f = model._meta.get_field(k)
@@ -98,3 +101,14 @@ def deserialize_instance(model, data={}):
                 pass
         setattr(ret, k, v)
     return ret
+
+def import_resolver(name):
+    components = name.split(".")
+    mod_name = '.'.join(components[:-1])
+    klass_name = components[-1]
+    mod = importlib.import_module(mod_name)
+
+    return getattr(mod, klass_name)
+
+
+
