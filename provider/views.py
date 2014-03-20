@@ -318,7 +318,7 @@ class Redirect(OAuthView, Mixin):
                 'error': 'invalid_data',
                 'error_description': _('Data has not been captured')})
 
-        redirect_uri = data.get('redirect_uri', None) or client.redirect_uri
+        redirect_uri = data.get('redirect_uri', None) or client.redirect_uri.split(" ")[0]
 
         parsed = urlparse.urlparse(redirect_uri)
 
