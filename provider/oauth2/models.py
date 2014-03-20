@@ -4,11 +4,8 @@ implement these models with fields and and methods to be compatible with the
 views in :attr:`provider.views`.
 """
 
-import datetime
-
 from django.db import models
 from django.conf import settings
-from django.utils import timezone
 from .. import constants
 from ..constants import CLIENT_TYPES
 from ..utils import now, short_token, long_token, get_code_expiry
