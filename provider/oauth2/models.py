@@ -48,7 +48,7 @@ class Client(models.Model):
     modified_at = models.DateTimeField(blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        self.last_modified_at = timezone.now()
+        self.modified_at = timezone.now()
         super(Client, self).save(*args, **kwargs)
 
     def __unicode__(self):
@@ -114,7 +114,7 @@ class Grant(models.Model):
     modified_at = models.DateTimeField(blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        self.last_modified_at = timezone.now()
+        self.modified_at = timezone.now()
         super(Grant, self).save(*args, **kwargs)
 
     def __unicode__(self):
@@ -156,7 +156,7 @@ class AccessToken(models.Model):
         return self.token
 
     def save(self, *args, **kwargs):
-        self.last_modified_at = timezone.now()
+        self.modified_at = timezone.now()
         if not self.expires:
             self.expires = self.client.get_default_token_expiry()
         super(AccessToken, self).save(*args, **kwargs)
@@ -204,7 +204,7 @@ class RefreshToken(models.Model):
     modified_at = models.DateTimeField(blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        self.last_modified_at = timezone.now()
+        self.modified_at = timezone.now()
         super(RefreshToken, self).save(*args, **kwargs)
 
     def __unicode__(self):
