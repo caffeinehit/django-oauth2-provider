@@ -461,6 +461,13 @@ class AuthBackendTest(BaseOAuth2TestCase):
         self.assertEqual(BasicClientBackend().authenticate(request).id,
                          2, "Didn't return the right client.")
 
+    def test_invalid_basic_client_backend(self):
+        request = type('Request', (object,), {'META': {}})()
+        request.META['HTTP_AUTHORIZATION'] = "Basic " + "abc"
+
+        self.assertIsNone(BasicClientBackend().authenticate(request),
+                          "Didn't return none.")
+
     def test_request_params_client_backend(self):
         request = type('Request', (object,), {'REQUEST': {}})()
 
