@@ -1,6 +1,7 @@
 from ..utils import now
 from .forms import ClientAuthForm, PublicPasswordGrantForm
 from .models import AccessToken
+import binascii
 
 
 class BaseBackend(object):
@@ -39,7 +40,7 @@ class BasicClientBackend(object):
                 return form.cleaned_data.get('client')
             return None
 
-        except ValueError:
+        except (ValueError, binascii.Error):
             # Auth header was malformed, unpacking went wrong
             return None
 
