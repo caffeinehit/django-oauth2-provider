@@ -286,6 +286,20 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'],
             response.content)
 
+    def test_fetching_access_token_with_invalid_method(self):
+        c = self.get_client()
+        response = self.client.get(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+            })
+
+        self.assertEqual(405, response.status_code)
+        self.assertEqual('invalid_request', json.loads(response.content)['error'])
+        self.assertEqual('POST', response['Allow'])
+
     def test_fetching_single_access_token(self):
         constants.SINGLE_ACCESS_TOKEN = True
 
