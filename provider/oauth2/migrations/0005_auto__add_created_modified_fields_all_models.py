@@ -8,71 +8,71 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'AccessToken.created_at'
-        db.add_column(u'oauth2_accesstoken', 'created_at',
+        # Adding field 'AccessToken.created'
+        db.add_column(u'oauth2_accesstoken', 'created',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now, blank=True),
                       keep_default=False)
 
-        # Adding field 'AccessToken.modified_at'
-        db.add_column(u'oauth2_accesstoken', 'modified_at',
+        # Adding field 'AccessToken.modified'
+        db.add_column(u'oauth2_accesstoken', 'modified',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2014, 3, 20, 0, 0), blank=True),
                       keep_default=False)
 
-        # Adding field 'Client.created_at'
-        db.add_column(u'oauth2_client', 'created_at',
+        # Adding field 'Client.created'
+        db.add_column(u'oauth2_client', 'created',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now, blank=True),
                       keep_default=False)
 
-        # Adding field 'Client.modified_at'
-        db.add_column(u'oauth2_client', 'modified_at',
+        # Adding field 'Client.modified'
+        db.add_column(u'oauth2_client', 'modified',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2014, 3, 20, 0, 0), blank=True),
                       keep_default=False)
 
-        # Adding field 'RefreshToken.created_at'
-        db.add_column(u'oauth2_refreshtoken', 'created_at',
+        # Adding field 'RefreshToken.created'
+        db.add_column(u'oauth2_refreshtoken', 'created',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now, blank=True),
                       keep_default=False)
 
-        # Adding field 'RefreshToken.modified_at'
-        db.add_column(u'oauth2_refreshtoken', 'modified_at',
+        # Adding field 'RefreshToken.modified'
+        db.add_column(u'oauth2_refreshtoken', 'modified',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2014, 3, 20, 0, 0), blank=True),
                       keep_default=False)
 
-        # Adding field 'Grant.created_at'
-        db.add_column(u'oauth2_grant', 'created_at',
+        # Adding field 'Grant.created'
+        db.add_column(u'oauth2_grant', 'created',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime.now, blank=True),
                       keep_default=False)
 
-        # Adding field 'Grant.modified_at'
-        db.add_column(u'oauth2_grant', 'modified_at',
+        # Adding field 'Grant.modified'
+        db.add_column(u'oauth2_grant', 'modified',
                       self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2014, 3, 20, 0, 0), blank=True),
                       keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting field 'AccessToken.created_at'
-        db.delete_column(u'oauth2_accesstoken', 'created_at')
+        # Deleting field 'AccessToken.created'
+        db.delete_column(u'oauth2_accesstoken', 'created')
 
-        # Deleting field 'AccessToken.modified_at'
-        db.delete_column(u'oauth2_accesstoken', 'modified_at')
+        # Deleting field 'AccessToken.modified'
+        db.delete_column(u'oauth2_accesstoken', 'modified')
 
-        # Deleting field 'Client.created_at'
-        db.delete_column(u'oauth2_client', 'created_at')
+        # Deleting field 'Client.created'
+        db.delete_column(u'oauth2_client', 'created')
 
-        # Deleting field 'Client.modified_at'
-        db.delete_column(u'oauth2_client', 'modified_at')
+        # Deleting field 'Client.modified'
+        db.delete_column(u'oauth2_client', 'modified')
 
-        # Deleting field 'RefreshToken.created_at'
-        db.delete_column(u'oauth2_refreshtoken', 'created_at')
+        # Deleting field 'RefreshToken.created'
+        db.delete_column(u'oauth2_refreshtoken', 'created')
 
-        # Deleting field 'RefreshToken.modified_at'
-        db.delete_column(u'oauth2_refreshtoken', 'modified_at')
+        # Deleting field 'RefreshToken.modified'
+        db.delete_column(u'oauth2_refreshtoken', 'modified')
 
-        # Deleting field 'Grant.created_at'
-        db.delete_column(u'oauth2_grant', 'created_at')
+        # Deleting field 'Grant.created'
+        db.delete_column(u'oauth2_grant', 'created')
 
-        # Deleting field 'Grant.modified_at'
-        db.delete_column(u'oauth2_grant', 'modified_at')
+        # Deleting field 'Grant.modified'
+        db.delete_column(u'oauth2_grant', 'modified')
 
 
     models = {
@@ -115,10 +115,10 @@ class Migration(SchemaMigration):
         u'oauth2.accesstoken': {
             'Meta': {'object_name': 'AccessToken'},
             'client': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['oauth2.Client']"}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
             'expires': ('django.db.models.fields.DateTimeField', [], {}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
             'scope': ('django.db.models.fields.IntegerField', [], {'default': '2'}),
             'token': ('django.db.models.fields.CharField', [], {'default': "'3f55ee0fbf15d9046ca3089c52cedd6cc9bc6324'", 'max_length': '255', 'db_index': 'True'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"})
@@ -128,9 +128,9 @@ class Migration(SchemaMigration):
             'client_id': ('django.db.models.fields.CharField', [], {'default': "'ad003e2221618d34414e'", 'max_length': '255'}),
             'client_secret': ('django.db.models.fields.CharField', [], {'default': "'3fd88b6dabcbd1bd776136e28eba350db42e6213'", 'max_length': '255'}),
             'client_type': ('django.db.models.fields.IntegerField', [], {}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'redirect_uri': ('django.db.models.fields.URLField', [], {'max_length': '200'}),
             'url': ('django.db.models.fields.URLField', [], {'max_length': '200'}),
@@ -140,10 +140,10 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Grant'},
             'client': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['oauth2.Client']"}),
             'code': ('django.db.models.fields.CharField', [], {'default': "'909ac9f389e2239b518734f65ea34754cb5e88d0'", 'max_length': '255'}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
             'expires': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 20, 0, 0)'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
             'redirect_uri': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'scope': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"})
@@ -152,10 +152,10 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'RefreshToken'},
             'access_token': ('django.db.models.fields.related.OneToOneField', [], {'related_name': "'refresh_token'", 'unique': 'True', 'to': u"orm['oauth2.AccessToken']"}),
             'client': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['oauth2.Client']"}),
-            'created_at': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now', 'blank': 'True'}),
             'expired': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified_at': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'blank': 'True'}),
             'token': ('django.db.models.fields.CharField', [], {'default': "'958f808d83e74bdb6114a964fb4e2c7fbb3133be'", 'max_length': '255'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"})
         }

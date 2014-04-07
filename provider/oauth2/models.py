@@ -44,11 +44,11 @@ class Client(models.Model):
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
-    created_at = models.DateTimeField(default=timezone.now, blank=True, editable=False)
-    modified_at = models.DateTimeField(blank=True, editable=False)
+    created = models.DateTimeField(default=timezone.now, blank=True, editable=False)
+    modified = models.DateTimeField(blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        self.modified_at = timezone.now()
+        self.modified = timezone.now()
         super(Client, self).save(*args, **kwargs)
 
     def __unicode__(self):
@@ -110,11 +110,11 @@ class Grant(models.Model):
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
     scope = models.IntegerField(default=0)
-    created_at = models.DateTimeField(default=timezone.now, blank=True, editable=False)
-    modified_at = models.DateTimeField(blank=True, editable=False)
+    created = models.DateTimeField(default=timezone.now, blank=True, editable=False)
+    modified = models.DateTimeField(blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        self.modified_at = timezone.now()
+        self.modified = timezone.now()
         super(Grant, self).save(*args, **kwargs)
 
     def __unicode__(self):
@@ -147,8 +147,8 @@ class AccessToken(models.Model):
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
-    created_at = models.DateTimeField(default=timezone.now, blank=True, editable=False)
-    modified_at = models.DateTimeField(blank=True, editable=False)
+    created = models.DateTimeField(default=timezone.now, blank=True, editable=False)
+    modified = models.DateTimeField(blank=True, editable=False)
 
     objects = AccessTokenManager()
 
@@ -156,7 +156,7 @@ class AccessToken(models.Model):
         return self.token
 
     def save(self, *args, **kwargs):
-        self.modified_at = timezone.now()
+        self.modified = timezone.now()
         if not self.expires:
             self.expires = self.client.get_default_token_expiry()
         super(AccessToken, self).save(*args, **kwargs)
@@ -200,11 +200,11 @@ class RefreshToken(models.Model):
             related_name='refresh_token')
     client = models.ForeignKey(Client)
     expired = models.BooleanField(default=False)
-    created_at = models.DateTimeField(default=timezone.now, blank=True, editable=False)
-    modified_at = models.DateTimeField(blank=True, editable=False)
+    created = models.DateTimeField(default=timezone.now, blank=True, editable=False)
+    modified = models.DateTimeField(blank=True, editable=False)
 
     def save(self, *args, **kwargs):
-        self.modified_at = timezone.now()
+        self.modified = timezone.now()
         super(RefreshToken, self).save(*args, **kwargs)
 
     def __unicode__(self):
