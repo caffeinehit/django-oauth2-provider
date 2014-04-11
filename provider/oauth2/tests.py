@@ -154,7 +154,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
             self.get_client().client_id,
             constants.SCOPES[0][1]))
         response = self.client.get(self.auth_url2())
-        # self.assertEqual(200, response.status_code)
+        self.assertEqual(200, response.status_code)
 
     def test_authorization_is_not_granted(self):
         self.login()
@@ -293,6 +293,23 @@ class AccessTokenTest(BaseOAuth2TestCase):
         result2 = self._login_authorize_get_token()
 
         self.assertEqual(result1['access_token'], result2['access_token'])
+
+        constants.SINGLE_ACCESS_TOKEN = False
+
+    def test_fetching_single_access_token_after_refresh(self):
+        constants.SINGLE_ACCESS_TOKEN = True
+
+        token = self._login_authorize_get_token()
+
+        self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': token['refresh_token'],
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        new_token = self._login_authorize_get_token()
+        self.assertNotEqual(token['access_token'], new_token['access_token'])
 
         constants.SINGLE_ACCESS_TOKEN = False
 
