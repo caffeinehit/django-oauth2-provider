@@ -3,10 +3,12 @@ from django.conf import settings
 
 CONFIDENTIAL = 0
 PUBLIC = 1
+WECHAT = 2
 
 CLIENT_TYPES = (
     (CONFIDENTIAL, "Confidential (Web applications)"),
-    (PUBLIC, "Public (Native and JS applications)")
+    (PUBLIC, "Public (Native and JS applications)"),
+    (WECHAT, "WeChat applications")
 )
 
 RESPONSE_TYPE_CHOICES = getattr(settings, 'OAUTH_RESPONSE_TYPE_CHOICES', ("code", "token"))
