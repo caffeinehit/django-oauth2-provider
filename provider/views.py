@@ -539,7 +539,7 @@ class AccessToken(OAuthView, Mixin):
         else:
             at = self.create_access_token(request, user, scope, client)
             # Public clients don't get refresh tokens
-            if client.client_type != 1:
+            if client.client_type == constants.CONFIDENTIAL:
                 rt = self.create_refresh_token(request, user, scope, at, client)
 
         return self.access_token_response(at)
