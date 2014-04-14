@@ -61,6 +61,18 @@ class Client(models.Model):
                     client_secret=self.client_secret,
                     client_type=self.client_type)
 
+    @property
+    def is_confidential(self):
+      return self.client_type == constants.CONFIDENTIAL
+
+    @property
+    def is_public(self):
+      return self.client_type == constants.PUBLIC
+
+    @property
+    def is_insecure(self):
+      return self.client_type == constants.INSECURE
+
     @classmethod
     def deserialize(cls, data):
         if not data:
