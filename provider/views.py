@@ -1,12 +1,19 @@
 import json
 import urlparse
-from django.http import HttpResponse, JsonResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
 from . import constants, scope
+
+
+try:
+    from django.http import JsonResponse
+except ImportError:
+    from django.http import HttpResponse
+    def JsonResponse(response_data, *args, **kwargs):
+        return HttpResponse(json.dumps(response_data), *args, mimetype='application/json', **kwargs)
 
 
 class OAuthError(Exception):
@@ -298,8 +305,7 @@ class Redirect(OAuthView, Mixin):
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        return JsonResponse(error, status=status, **kwargs)
 
     def get(self, request):
         data = self.get_data(request)
@@ -463,8 +469,7 @@ class AccessToken(OAuthView, Mixin):
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        return JsonResponse(error, status=status, **kwargs)
 
     def access_token_response(self, access_token):
         """
