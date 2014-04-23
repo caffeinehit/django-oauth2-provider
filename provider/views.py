@@ -1,6 +1,6 @@
 import json
 import urlparse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
@@ -487,9 +487,7 @@ class AccessToken(OAuthView, Mixin):
         except ObjectDoesNotExist:
             pass
 
-        return HttpResponse(
-            json.dumps(response_data), mimetype='application/json'
-        )
+        return JsonResponse(response_data)
 
     def authorization_code(self, request, data, client):
         """
