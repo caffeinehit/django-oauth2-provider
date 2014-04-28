@@ -88,7 +88,7 @@ class Migration(SchemaMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
         user_model_label: {
-            'Meta': {'object_name': user_model_label.split('.')[-1]},
+            'Meta': {'object_name': user_model_label.split('.')[-1], 'db_table': "'"+user_model_class()._meta.db_table+"'"},
             user_model_class()._meta.pk.column: ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
         },
         'contenttypes.contenttype': {
