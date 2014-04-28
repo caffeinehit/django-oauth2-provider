@@ -377,10 +377,19 @@ class AccessToken(OAuthView, Mixin):
     Authentication backends used to authenticate a particular client.
     """
 
-    grant_types = ['authorization_code', 'refresh_token', 'password']
+    grant_types = ['authorization_code', 'refresh_token', 'password',
+                   'client_credentials']
     """
     The default grant types supported by this view.
     """
+
+    def get_client_credentials_grant(self, request, data, client):
+        """
+        Return the optional parameters (scope) associated with this request.
+
+        :return: ``tuple`` - ``(True or False, options)``
+        """
+        raise NotImplementedError
 
     def get_authorization_code_grant(self, request, data, client):
         """
@@ -544,6 +553,24 @@ class AccessToken(OAuthView, Mixin):
 
         return self.access_token_response(at)
 
+
+    def client_credentials(self, request, data, client):
+        """
+        Handle ``grant_type=client_credentials`` requests as defined in
+        :rfc:`4.4`.
+        """
+        data = self.get_client_credentials_grant(request, data, client)
+        scope = data.get('scope')
+
+        if constants.SINGLE_ACCESS_TOKEN:
+            at = self.get_access_token(request, client.user, scope, client)
+        else:
+            at = self.create_access_token(request, client.user, scope, client)
+            rt = self.create_refresh_token(request, client.user, scope, at,
+                                                                    client)
+
+        return self.access_token_response(at)
+
     def get_handler(self, grant_type):
         """
         Return a function or method that is capable handling the ``grant_type``
@@ -556,6 +583,8 @@ class AccessToken(OAuthView, Mixin):
             return self.refresh_token
         elif grant_type == 'password':
             return self.password
+        elif grant_type == 'client_credentials':
+            return self.client_credentials
         return None
 
     def get(self, request):
