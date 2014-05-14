@@ -4,6 +4,7 @@ import datetime
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.test.utils import override_settings
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -46,16 +47,45 @@ class BaseOAuth2TestCase(TestCase):
     def get_password(self):
         return 'test'
 
-    def _login_and_authorize(self, url_func=None):
+    def _login_and_authorize(self, url_func=None, request_scope=None):
         if url_func is None:
             url_func = lambda: self.auth_url() + '?client_id=%s&response_type=code&state=abc' % self.get_client().client_id
+
+        if request_scope is None:
+            request_scope = constants.SCOPES[0][1]
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
 
-        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0][1]})
+        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': request_scope})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
+
+    def _login_authorize_get_token(self, request_scope=None):
+        required_props = ['access_token', 'token_type']
+
+        self.login()
+        self._login_and_authorize(request_scope=request_scope)
+
+        response = self.client.get(self.redirect_url())
+        query = QueryDict(urlparse.urlparse(response['Location']).query)
+        code = query['code']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+
+        self.assertEqual(200, response.status_code, response.content)
+
+        token = json.loads(response.content)
+
+        for prop in required_props:
+            self.assertIn(prop, token, "Access token response missing "
+                    "required property: %s" % prop)
+
+        return token
 
 
 class AuthorizationTest(BaseOAuth2TestCase):
@@ -237,32 +267,6 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code, response.content)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
-
-    def _login_authorize_get_token(self):
-        required_props = ['access_token', 'token_type']
-
-        self.login()
-        self._login_and_authorize()
-
-        response = self.client.get(self.redirect_url())
-        query = QueryDict(urlparse.urlparse(response['Location']).query)
-        code = query['code']
-
-        response = self.client.post(self.access_token_url(), {
-            'grant_type': 'authorization_code',
-            'client_id': self.get_client().client_id,
-            'client_secret': self.get_client().client_secret,
-            'code': code})
-
-        self.assertEqual(200, response.status_code, response.content)
-
-        token = json.loads(response.content)
-
-        for prop in required_props:
-            self.assertIn(prop, token, "Access token response missing "
-                    "required property: %s" % prop)
-
-        return token
 
     def test_fetching_access_token_with_valid_grant(self):
         self._login_authorize_get_token()
@@ -447,6 +451,84 @@ class AccessTokenTest(BaseOAuth2TestCase):
     def test_access_token_response_valid_token_type(self):
         token = self._login_authorize_get_token()
         self.assertEqual(token['token_type'], constants.TOKEN_TYPE, token)
+
+
+class ApprovalPromptTest(BaseOAuth2TestCase):
+    fixtures = ['test_oauth2']
+
+    def setUp(self):
+        constants.ENABLE_APPROVAL_PROMPT_BYPASS = True
+
+    def tearDown(self):
+        constants.ENABLE_APPROVAL_PROMPT_BYPASS = False
+
+    def test_get_second_token_without_prompt(self):
+
+        self._login_authorize_get_token()
+
+        # Now we should be able to get an access token skipping the approval promt
+        # Notice approval_prompt in the url
+
+        url = self.auth_url() + '?client_id=%s&response_type=code&state=abc&approval_prompt=auto' \
+            % self.get_client().client_id
+
+        response = self.client.get(url)
+        response = self.client.get(self.auth_url2())
+
+        # Notice! we get the redirect immediately
+
+        self.assertEqual(302, response.status_code, response.content)
+        self.assertTrue(self.redirect_url() in response['Location'])
+
+    def test_use_force_by_default(self):
+
+        self._login_authorize_get_token()
+
+        url = self.auth_url() + '?client_id=%s&response_type=code&state=abc' % self.get_client().client_id
+
+        response = self.client.get(url)
+        response = self.client.get(self.auth_url2())
+
+        self.assertEqual(200, response.status_code, response.content)
+
+    def test_always_prompt_if_no_access_token(self):
+
+        AccessToken.objects.all().delete()
+
+        self.login()
+
+        url = self.auth_url() + '?client_id=%s&response_type=code&state=abc&approval_prompt=auto' \
+            % self.get_client().client_id
+
+        response = self.client.get(url)
+        response = self.client.get(self.auth_url2())
+
+        self.assertEqual(200, response.status_code, response.content)
+
+    def test_skip_prompt_if_scope_is_less(self):
+
+        self._login_authorize_get_token(request_scope='write')
+
+        url = self.auth_url() + '?client_id=%s&response_type=code&state=abc&scope=read&approval_prompt=auto' \
+            % self.get_client().client_id
+
+        response = self.client.get(url)
+        response = self.client.get(self.auth_url2())
+
+        self.assertEqual(302, response.status_code, response.content)
+        self.assertTrue(self.redirect_url() in response['Location'])
+
+    def test_prompt_if_scope_is_greater(self):
+
+        self._login_authorize_get_token()
+
+        url = self.auth_url() + '?client_id=%s&response_type=code&state=abc&scope=write&approval_prompt=auto' \
+            % self.get_client().client_id
+
+        response = self.client.get(url)
+        response = self.client.get(self.auth_url2())
+
+        self.assertEqual(200, response.status_code, response.content)
 
 
 class AuthBackendTest(BaseOAuth2TestCase):

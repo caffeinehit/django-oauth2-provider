@@ -70,6 +70,24 @@
     To have the provider only create and retrieve one access token per
     user/client/scope combination, set to `True`.
 
+.. attribute:: ENABLE_APPROVAL_PROMPT_BYPASS
+
+    :settings: `OAUTH_ENABLE_APPROVAL_PROMPT_BYPASS`
+    :default: `False`
+
+    Enable an optional `approval_prompt` parameter in authorization requests.
+    This parameter is described in
+    `Googles OAUTH2 API <https://developers.google.com/accounts/docs/OAuth2WebServer#formingtheurl>`_
+    documentation.
+
+    The approval_prompt parameter accepts two values, `force` (default) and `auto`.
+
+    The approval prompt is skipped and a grant token is provided immediately if an authorization request
+    matches an valid access token and `approval_promt` is set to `auto`.
+
+    This setting is ideal if the OAUTH2 API is used as an authentication service, and you want to avoid
+    re-prompting the user for OAUTH2 access each time he authenticates.
+
 `provider.forms`
 ----------------
 .. automodule:: provider.forms
