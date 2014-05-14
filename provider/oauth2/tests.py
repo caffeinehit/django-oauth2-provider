@@ -399,6 +399,22 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual(200, response.status_code, response.content)
         self.assertTrue(json.loads(response.content)['refresh_token'])
 
+    def test_email_and_password_grant_confidential(self):
+        c = self.get_client()
+        c.client_type = 0 # confidential
+        c.save()
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'email_and_password',
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
+            'email': self.get_user().email,
+            'password': self.get_password(),
+        })
+
+        self.assertEqual(200, response.status_code, response.content)
+        self.assertTrue(json.loads(response.content)['refresh_token'])
+
     def test_password_grant_confidential_no_secret(self):
         c = self.get_client()
         c.client_type = 0 # confidential

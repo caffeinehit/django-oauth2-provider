@@ -377,7 +377,8 @@ class AccessToken(OAuthView, Mixin):
     Authentication backends used to authenticate a particular client.
     """
 
-    grant_types = ['authorization_code', 'refresh_token', 'password']
+    grant_types = ['authorization_code', 'refresh_token', 'password',
+                   'email_and_password']
     """
     The default grant types supported by this view.
     """
@@ -544,6 +545,25 @@ class AccessToken(OAuthView, Mixin):
 
         return self.access_token_response(at)
 
+    def email_and_password(self, request, data, client):
+        """
+        Handle ``grant_type=email_and_password`` requests.
+        """
+
+        data = self.get_email_and_password_grant(request, data, client)
+        user = data.get('user')
+        scope = data.get('scope')
+
+        if constants.SINGLE_ACCESS_TOKEN:
+            at = self.get_access_token(request, user, scope, client)
+        else:
+            at = self.create_access_token(request, user, scope, client)
+            # Public clients don't get refresh tokens
+            if client.client_type != 1:
+                rt = self.create_refresh_token(request, user, scope, at, client)
+
+        return self.access_token_response(at)
+
     def get_handler(self, grant_type):
         """
         Return a function or method that is capable handling the ``grant_type``
@@ -556,6 +576,8 @@ class AccessToken(OAuthView, Mixin):
             return self.refresh_token
         elif grant_type == 'password':
             return self.password
+        elif grant_type == 'email_and_password':
+            return self.email_and_password
         return None
 
     def get(self, request):
