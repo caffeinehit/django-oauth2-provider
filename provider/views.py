@@ -292,14 +292,13 @@ class Redirect(OAuthView, Mixin):
     an error.
     """
 
-    def error_response(self, error, mimetype='application/json', status=400,
-            **kwargs):
+    def error_response(self, error, status=400, **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        kwargs.setdefault('content_type', 'application/json')
+        return HttpResponse(json.dumps(error), status=status, **kwargs)
 
     def get(self, request):
         data = self.get_data(request)
@@ -457,14 +456,13 @@ class AccessToken(OAuthView, Mixin):
         """
         raise NotImplementedError
 
-    def error_response(self, error, mimetype='application/json', status=400,
-            **kwargs):
+    def error_response(self, error, status=400, **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        kwargs.setdefault('content_type', 'application/json')
+        return HttpResponse(json.dumps(error), status=status, **kwargs)
 
     def access_token_response_data(self, access_token):
         """
@@ -498,7 +496,7 @@ class AccessToken(OAuthView, Mixin):
         response_data = self.access_token_response_data(access_token)
 
         return HttpResponse(
-            json.dumps(response_data), mimetype='application/json'
+            json.dumps(response_data), content_type='application/json'
         )
 
     def authorization_code(self, request, data, client):
