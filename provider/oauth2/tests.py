@@ -1,5 +1,6 @@
 import json
-import urlparse
+from six.moves.urllib import parse as urlparse
+import six
 import datetime
 from django.http import QueryDict
 from django.conf import settings
@@ -578,7 +579,8 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
         self.assertTrue('code' in location)
 
         # verify that Grant with code exists
-        code = urlparse.parse_qs(location)['code'][0]
+        location_qs = urlparse.urlparse(location)[4]
+        code = urlparse.parse_qs(location_qs)['code'][0]
         self.assertTrue(Grant.objects.filter(code=code).exists())
 
         # use the code/grant
