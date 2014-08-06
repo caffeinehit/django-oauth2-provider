@@ -1,3 +1,5 @@
+import codecs
+
 from ..utils import now
 from .forms import ClientAuthForm, PublicPasswordGrantForm
 from .models import AccessToken
@@ -29,7 +31,8 @@ class BasicClientBackend(object):
 
         try:
             basic, base64 = auth.split(' ')
-            client_id, client_secret = base64.decode('base64').split(':')
+            base64_base64 = codecs.decode(base64.encode('utf-8'), 'base64').decode('utf-8')
+            client_id, client_secret = base64_base64.split(':')
 
             form = ClientAuthForm({
                 'client_id': client_id,
