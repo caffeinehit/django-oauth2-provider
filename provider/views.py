@@ -73,7 +73,8 @@ class Mixin(object):
         """
         Clear all OAuth related data from the session store.
         """
-        for key in request.session.keys():
+        session_keys = list(request.session.keys())
+        for key in session_keys:
             if key.startswith(constants.SESSION_KEY):
                 del request.session[key]
 
