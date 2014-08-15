@@ -33,3 +33,18 @@ class UtilsTestCase(TestCase):
             #   datetime.time(10, 6, 28, 705000)
             self.assertEqual(int(t1.microsecond/1000),
                              int(t2.microsecond/1000))
+
+    def test_none_child_(self):
+        class ChildModel(models.Model):
+            pass
+
+        class ParentModel(models.Model):
+            child = models.ForeignKey(ChildModel, null=True)
+
+        reference = ParentModel()
+
+        data = utils.serialize_instance(reference)
+        self.assertEqual(data['child_id'], None)
+
+        instance = utils.deserialize_instance(ParentModel, data)
+        self.assertEqual(instance.child, None)
