@@ -1,14 +1,20 @@
 import json
 import urlparse
 import datetime
+import uuid
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.test.utils import override_settings
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .. import constants, scope
+import jwt
+import mock
+from testfixtures import Replacer, test_datetime
 from ..compat import skipIfCustomUser
+from provider.oauth2.oidc import get_id_token
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
@@ -109,7 +115,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
     def test_authorization_requires_supported_response_type(self):
         self.login()
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
+        response = self.client.get(
+            self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -144,7 +151,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_requires_a_valid_scope(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
+        response = self.client.get(
+            self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -211,7 +219,8 @@ class AccessTokenTest(BaseOAuth2TestCase):
         now = date_now()
         default_expiration_timedelta = constants.EXPIRE_DELTA
         current_expiration_timedelta = datetime.timedelta(seconds=token.get_expire_delta(reference=now))
-        self.assertTrue(abs(current_expiration_timedelta - default_expiration_timedelta) <= datetime.timedelta(seconds=1))
+        self.assertTrue(
+            abs(current_expiration_timedelta - default_expiration_timedelta) <= datetime.timedelta(seconds=1))
 
     def test_fetching_access_token_with_invalid_client(self):
         self.login()
@@ -260,7 +269,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         for prop in required_props:
             self.assertIn(prop, token, "Access token response missing "
-                    "required property: %s" % prop)
+                                       "required property: %s" % prop)
 
         return token
 
@@ -284,7 +293,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'],
-            response.content)
+                         response.content)
 
     def test_fetching_single_access_token(self):
         constants.SINGLE_ACCESS_TOKEN = True
@@ -362,11 +371,11 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'],
-            response.content)
+                         response.content)
 
     def test_password_grant_public(self):
         c = self.get_client()
-        c.client_type = 1 # public
+        c.client_type = 1  # public
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -385,7 +394,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = 0  # confidential
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -401,7 +410,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential_no_secret(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = 0  # confidential
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -415,7 +424,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_invalid_password_public(self):
         c = self.get_client()
-        c.client_type = 1 # public
+        c.client_type = 1  # public
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -430,7 +439,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_invalid_password_confidential(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = 0  # confidential
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -476,7 +485,7 @@ class AuthBackendTest(BaseOAuth2TestCase):
         backend = AccessTokenBackend()
         token = AccessToken.objects.create(user=user, client=client)
         authenticated = backend.authenticate(access_token=token.token,
-                client=client)
+                                             client=client)
 
         self.assertIsNotNone(authenticated)
 
@@ -508,7 +517,7 @@ class EnforceSecureTest(BaseOAuth2TestCase):
 class ClientFormTest(TestCase):
     def test_client_form(self):
         form = ClientForm({'name': 'TestName', 'url': 'http://127.0.0.1:8000',
-            'redirect_uri': 'http://localhost:8000/'})
+                           'redirect_uri': 'http://localhost:8000/'})
 
         self.assertFalse(form.is_valid())
 
@@ -621,3 +630,113 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
                          .exists())
         self.assertFalse(RefreshToken.objects.filter(token=refresh_token)
                          .exists())
+
+
+class AccessTokenTestCase(BaseOAuth2TestCase):
+    fixtures = ['test_oauth2']
+
+    def _get_access_token(self, scope):
+        user = self.get_user()
+        client = self.get_client()
+        return AccessToken.objects.create(user=user, client=client, scope=scope)
+
+    def setUp(self):
+        super(AccessTokenTestCase, self).setUp()
+        self.access_token = self._get_access_token(constants.OPEN_ID)
+        self.nonce = unicode(uuid.uuid4())
+
+@mock.patch('django.utils.timezone.now', mock.Mock(return_value=datetime.datetime(1970, 01, 01)))
+@override_settings(OAUTH_OIDC_ISSUER='https://example.com/')
+class IdTokenUtilsTests(AccessTokenTestCase):
+    def _get_expected_id_token(self, access_token, nonce):
+        client = access_token.client
+        expected = {}
+
+        # Set issuer
+        expected['iss'] = settings.OAUTH_OIDC_ISSUER
+
+        # Set audience
+        expected['aud'] = client.client_id
+
+        # Set current/issued time
+        expected['iat'] = 0
+
+        # Set expiration time
+        expected['exp'] = 30
+
+        # CSRF protection
+        expected['nonce'] = nonce
+
+        # Add profile details
+        if scope.check(constants.PROFILE, access_token.scope):
+            user = access_token.user
+            expected.update({
+                'name': user.get_full_name(),
+                'given_name': user.first_name,
+                'family_name': user.last_name,
+                'email': user.email,
+                'preferred_username': user.username
+            })
+
+        # Create a signed JWT
+        expected = jwt.encode(expected, client.client_secret)
+        return expected
+
+    def _get_actual_id_token(self, access_token, nonce):
+        with Replacer() as r:
+            r.replace('provider.oauth2.oidc.datetime.datetime', test_datetime(1970, 1, 1))
+            return get_id_token(access_token, nonce)
+
+    def test_get_id_token(self):
+        actual = self._get_actual_id_token(self.access_token, self.nonce)
+        expected = self._get_expected_id_token(self.access_token, self.nonce)
+        self.assertEqual(actual, expected)
+
+    def test_get_id_token_with_profile(self):
+        # Add the profile scope to access token
+        self.access_token.scope |= constants.PROFILE
+        self.access_token.save()
+
+        actual = self._get_actual_id_token(self.access_token, self.nonce)
+        expected = self._get_expected_id_token(self.access_token, self.nonce)
+        self.assertEqual(actual, expected)
+
+
+class UserInfoViewTests(AccessTokenTestCase):
+    def setUp(self):
+        super(UserInfoViewTests, self).setUp()
+        self.path = reverse('oauth2:user_info')
+
+    def get_with_auth(self, path, access_token=None):
+        kwargs = {}
+
+        if access_token:
+            kwargs['HTTP_AUTHORIZATION'] = 'Bearer %s' % access_token
+
+        return self.client.get(path, **kwargs)
+
+    def test_unauthorized(self):
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.content)['error'], 'access_denied')
+
+    def test_expired_access_token(self):
+        response = self.get_with_auth(self.path, '1234')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.content)['error'], 'invalid_token')
+
+    def test_authorized(self):
+        access_token = self.access_token
+        user = access_token.user
+
+        response = self.get_with_auth(self.path, access_token.token)
+        self.assertEqual(response.status_code, 200)
+
+        expected = {
+            'sub': user.pk,
+            'preferred_username': user.username,
+            'given_name': user.first_name,
+            'family_name': user.last_name,
+            'email': user.email
+        }
+        self.assertDictEqual(json.loads(response.content), expected)

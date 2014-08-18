@@ -16,14 +16,20 @@ TOKEN_TYPE = 'Bearer'
 READ = 1 << 1
 WRITE = 1 << 2
 READ_WRITE = READ | WRITE
+OPEN_ID = 1 << 3
+PROFILE = 1 << 4
 
 DEFAULT_SCOPES = (
     (READ, 'read'),
     (WRITE, 'write'),
     (READ_WRITE, 'read+write'),
+    (OPEN_ID, 'openid'),
+    (PROFILE, 'profile'),
 )
 
 SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
+
+OAUTH_OIDC_ISSUER = getattr(settings, 'OAUTH_OIDC_ISSUER', None)
 
 EXPIRE_DELTA = getattr(settings, 'OAUTH_EXPIRE_DELTA', timedelta(days=365))
 

@@ -1,2 +1,4 @@
 Django>=1.4
 shortuuid>=0.3
+PyJWT>=0.2.1
+testfixtures>=4.0.1
