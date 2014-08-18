@@ -1,6 +1,9 @@
 from datetime import timedelta
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from .. import constants
+from provider import scope
+from provider.oauth2.oidc import get_id_token
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
 from ..utils import now
@@ -137,3 +140,18 @@ class AccessTokenView(AccessTokenView):
         else:
             at.expires = now() - timedelta(days=1)
             at.save()
+
+    # pylint: disable=super-on-old-class
+    def access_token_response_data(self, access_token):
+        """
+        Include username (for OAuth2) or id_token (for Open ID Connect) in the
+        access token response.
+        """
+        response_data = super(AccessTokenView, self).access_token_response_data(access_token)
+
+        if scope.check(constants.OPEN_ID, access_token.scope):
+            response_data.update({'id_token': get_id_token(access_token, self.request.POST['nonce'])})
+        else:
+            response_data.update({'username': access_token.user.username})
+
+        return response_data
