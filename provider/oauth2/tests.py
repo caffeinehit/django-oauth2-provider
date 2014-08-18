@@ -632,9 +632,7 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
                          .exists())
 
 
-@mock.patch('django.utils.timezone.now', mock.Mock(return_value=datetime.datetime(1970, 01, 01)))
-@override_settings(OAUTH_OIDC_ISSUER='https://example.com/')
-class IdTokenUtilsTests(BaseOAuth2TestCase):
+class AccessTokenTestCase(BaseOAuth2TestCase):
     fixtures = ['test_oauth2']
 
     def _get_access_token(self, scope):
@@ -643,10 +641,13 @@ class IdTokenUtilsTests(BaseOAuth2TestCase):
         return AccessToken.objects.create(user=user, client=client, scope=scope)
 
     def setUp(self):
-        super(IdTokenUtilsTests, self).setUp()
+        super(AccessTokenTestCase, self).setUp()
         self.access_token = self._get_access_token(constants.OPEN_ID)
         self.nonce = unicode(uuid.uuid4())
 
+@mock.patch('django.utils.timezone.now', mock.Mock(return_value=datetime.datetime(1970, 01, 01)))
+@override_settings(OAUTH_OIDC_ISSUER='https://example.com/')
+class IdTokenUtilsTests(AccessTokenTestCase):
     def _get_expected_id_token(self, access_token, nonce):
         client = access_token.client
         expected = {}
@@ -699,3 +700,43 @@ class IdTokenUtilsTests(BaseOAuth2TestCase):
         actual = self._get_actual_id_token(self.access_token, self.nonce)
         expected = self._get_expected_id_token(self.access_token, self.nonce)
         self.assertEqual(actual, expected)
+
+
+class UserInfoViewTests(AccessTokenTestCase):
+    def setUp(self):
+        super(UserInfoViewTests, self).setUp()
+        self.path = reverse('oauth2:user_info')
+
+    def get_with_auth(self, path, access_token=None):
+        kwargs = {}
+
+        if access_token:
+            kwargs['HTTP_AUTHORIZATION'] = 'Bearer %s' % access_token
+
+        return self.client.get(path, **kwargs)
+
+    def test_unauthorized(self):
+        response = self.client.get(self.path)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.content)['error'], 'access_denied')
+
+    def test_expired_access_token(self):
+        response = self.get_with_auth(self.path, '1234')
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(json.loads(response.content)['error'], 'invalid_token')
+
+    def test_authorized(self):
+        access_token = self.access_token
+        user = access_token.user
+
+        response = self.get_with_auth(self.path, access_token.token)
+        self.assertEqual(response.status_code, 200)
+
+        expected = {
+            'sub': user.pk,
+            'preferred_username': user.username,
+            'given_name': user.first_name,
+            'family_name': user.last_name,
+            'email': user.email
+        }
+        self.assertDictEqual(json.loads(response.content), expected)

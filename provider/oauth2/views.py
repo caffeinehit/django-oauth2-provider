@@ -1,7 +1,10 @@
 from datetime import timedelta
+import json
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from .. import constants
+from django.http import HttpResponse
+from django.views.generic import View
 from provider import scope
 from provider.oauth2.oidc import get_id_token
 from ..views import Capture, Authorize, Redirect
@@ -18,6 +21,7 @@ class Capture(Capture):
     """
     Implementation of :class:`provider.views.Capture`.
     """
+
     def get_redirect_url(self, request):
         return reverse('oauth2:authorize')
 
@@ -26,6 +30,7 @@ class Authorize(Authorize):
     """
     Implementation of :class:`provider.views.Authorize`.
     """
+
     def get_request_form(self, client, data):
         return AuthorizationRequestForm(data, client=client)
 
@@ -155,3 +160,54 @@ class AccessTokenView(AccessTokenView):
             response_data.update({'username': access_token.user.username})
 
         return response_data
+
+
+class ProtectedView(View):
+    access_token = None
+
+    def dispatch(self, request, *args, **kwargs):
+        error_msg = None
+
+        # Get the header value
+        token = request.META.get('HTTP_AUTHORIZATION', '')
+
+        # Trim the Bearer portion
+        token = token.replace('Bearer ', '')
+
+        if token:
+            # Verify token exists and is valid
+            access_token = AccessToken.objects.filter(token=token).first()
+
+            if access_token is None or access_token.get_expire_delta() <= 0:
+                error_msg = 'invalid_token'
+            else:
+                self.access_token = access_token
+                self.user = access_token.user
+        else:
+            # Return an error response if no token supplied
+            error_msg = 'access_denied'
+
+        if error_msg:
+            return HttpResponse(json.dumps({'error': error_msg}), status=401, content_type='application/json')
+
+        return super(ProtectedView, self).dispatch(request, *args, **kwargs)
+
+
+class UserInfoView(ProtectedView):
+    def get_user_info(self):
+        """
+        Return a dict representing the user data to be returned by the view.
+        """
+        user = self.user
+
+        return {
+            'sub': user.pk,
+            'preferred_username': user.username,
+            'given_name': user.first_name,
+            'family_name': user.last_name,
+            'email': user.email
+        }
+
+    def get(self, request, *args, **kwargs):
+        data = self.get_user_info()
+        return HttpResponse(json.dumps(data), content_type='application/json')
