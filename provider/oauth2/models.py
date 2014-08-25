@@ -82,6 +82,7 @@ class Client(models.Model):
         return cls(**kwargs)
 
     class Meta:
+        app_label = 'oauth2'
         db_table = 'oauth2_client'
 
 
@@ -112,6 +113,7 @@ class Grant(models.Model):
         return self.code
 
     class Meta:
+        app_label = 'oauth2'
         db_table = 'oauth2_grant'
 
 
@@ -172,6 +174,7 @@ class AccessToken(models.Model):
         return timedelta.days*86400 + timedelta.seconds
 
     class Meta:
+        app_label = 'oauth2'
         db_table = 'oauth2_accesstoken'
 
 
@@ -199,4 +202,5 @@ class RefreshToken(models.Model):
         return self.token
 
     class Meta:
+        app_label = 'oauth2'
         db_table = 'oauth2_refreshtoken'
