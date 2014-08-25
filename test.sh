@@ -5,7 +5,7 @@ DJ_VERSION=$(django-admin.py --version)
 # exit if fail
 [[ "$?" -ne "0" ]] && exit;
 
-IS_16=$(echo $DJ_VERSION | grep "1.6")
+IS_16=$(echo $DJ_VERSION | grep -E "1\.6|1\.7|1\.8|dev")
 
 # if django version is not 1.6 (non-0 exit) we have to pass different
 # app names to test runner
