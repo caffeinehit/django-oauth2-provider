@@ -298,7 +298,7 @@ class Redirect(OAuthView, Mixin):
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
+        return HttpResponse(json.dumps(error), content_type=mimetype,
                 status=status, **kwargs)
 
     def get(self, request):
@@ -463,7 +463,7 @@ class AccessToken(OAuthView, Mixin):
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
+        return HttpResponse(json.dumps(error), content_type=mimetype,
                 status=status, **kwargs)
 
     def access_token_response(self, access_token):
@@ -488,7 +488,7 @@ class AccessToken(OAuthView, Mixin):
             pass
 
         return HttpResponse(
-            json.dumps(response_data), mimetype='application/json'
+            json.dumps(response_data), content_type='application/json'
         )
 
     def authorization_code(self, request, data, client):
