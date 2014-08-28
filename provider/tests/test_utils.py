@@ -1,6 +1,8 @@
 """
 Test cases for functionality provided by the provider.utils module
 """
+from __future__ import division
+from past.utils import old_div
 
 from datetime import datetime, time, date
 from django.test import TestCase
@@ -31,5 +33,5 @@ class UtilsTestCase(TestCase):
             # AssertionError:
             #   datetime.time(10, 6, 28, 705776) !=
             #   datetime.time(10, 6, 28, 705000)
-            self.assertEqual(int(t1.microsecond/1000),
-                             int(t2.microsecond/1000))
+            self.assertEqual(int(old_div(t1.microsecond,1000)),
+                             int(old_div(t2.microsecond,1000)))
