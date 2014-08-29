@@ -1,3 +1,5 @@
+import base64
+from future.builtins import object
 from ..utils import now
 from .forms import ClientAuthForm, PublicPasswordGrantForm
 from .models import AccessToken
@@ -28,9 +30,10 @@ class BasicClientBackend(object):
             return None
 
         try:
-            basic, base64 = auth.split(' ')
-            client_id, client_secret = base64.decode('base64').split(':')
-
+            basic, base64str = auth.split(' ')
+            client_id, client_secret = base64str.split(':')
+            client_id =client_id.encode('utf-8')
+            client_secret = client_secret.encode('utf-8')
             form = ClientAuthForm({
                 'client_id': client_id,
                 'client_secret': client_secret})
