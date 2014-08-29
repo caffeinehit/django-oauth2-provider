@@ -97,7 +97,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("An unauthorized client tried to access your resources." in response.content)
+        self.assertTrue("An unauthorized client tried to access your resources." in response.content.decode('utf-8'))
 
     def test_authorization_rejects_invalid_client_id(self):
         self.login()
@@ -105,7 +105,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("An unauthorized client tried to access your resources." in response.content)
+        self.assertTrue("An unauthorized client tried to access your resources." in response.content.decode('utf-8'))
 
     def test_authorization_requires_response_type(self):
         self.login()
@@ -113,7 +113,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"No 'response_type' supplied.") in response.content)
+        self.assertTrue(escape(u"No 'response_type' supplied.") in response.content.decode('utf-8'))
 
     def test_authorization_requires_supported_response_type(self):
         self.login()
@@ -121,11 +121,11 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
+        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content.decode('utf-8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
-        self.assertEqual(200, response.status_code, response.content)
+        self.assertEqual(200, response.status_code, response.content.decode('utf-8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=token' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
@@ -140,7 +140,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
+        self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content.decode('utf-8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
             self.get_client().client_id,
@@ -156,7 +156,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content)
+        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content.decode('utf-8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
             self.get_client().client_id,
@@ -464,9 +464,8 @@ class AuthBackendTest(BaseOAuth2TestCase):
         request = type('Request', (object,), {'META': {}})()
         request.META['HTTP_AUTHORIZATION'] = "Basic " + "{0}:{1}".format(
             self.get_client().client_id,
-            base64.b64encode(self.get_client().client_secret.encode('utf-8'))
+            self.get_client().client_secret,
         )
-        #import pdb; pdb.set_trace()
         self.assertEqual(BasicClientBackend().authenticate(request).id,
                          2, "Didn't return the right client.")
 
@@ -505,13 +504,13 @@ class EnforceSecureTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("A secure connection is required." in response.content)
+        self.assertTrue("A secure connection is required." in response.content.decode('utf-8'))
 
     def test_access_token_enforces_SSL(self):
         response = self.client.post(self.access_token_url(), {})
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("A secure connection is required." in response.content)
+        self.assertTrue("A secure connection is required." in response.content.decode('utf-8'))
 
 
 class ClientFormTest(TestCase):
