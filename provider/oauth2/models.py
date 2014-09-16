@@ -29,7 +29,7 @@ class Client(models.Model):
     * :attr:`user`
     * :attr:`name`
     * :attr:`url`
-    * :attr:`redirect_url`
+    * :attr:`redirect_uri`
     * :attr:`client_id`
     * :attr:`client_secret`
     * :attr:`client_type`
