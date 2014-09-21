@@ -1,6 +1,7 @@
 import json
 import urlparse
 import datetime
+from django import VERSION as DJANGO_VERSION
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -15,6 +16,11 @@ from .forms import ClientForm
 from .models import Client, Grant, AccessToken, RefreshToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
+
+FIXTURES = ['test_oauth2']
+
+if DJANGO_VERSION[0] == 1 and DJANGO_VERSION[1] >= 7:
+    FIXTURES = ['test_oauth2_17']
 
 
 @skipIfCustomUser
@@ -59,7 +65,7 @@ class BaseOAuth2TestCase(TestCase):
 
 
 class AuthorizationTest(BaseOAuth2TestCase):
-    fixtures = ['test_oauth2']
+    fixtures = FIXTURES
 
     def setUp(self):
         self._old_login = settings.LOGIN_URL
@@ -202,7 +208,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
 
 class AccessTokenTest(BaseOAuth2TestCase):
-    fixtures = ['test_oauth2.json']
+    fixtures = FIXTURES
 
     def test_access_token_get_expire_delta_value(self):
         user = self.get_user()
@@ -450,7 +456,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
 
 class AuthBackendTest(BaseOAuth2TestCase):
-    fixtures = ['test_oauth2']
+    fixtures = FIXTURES
 
     def test_basic_client_backend(self):
         request = type('Request', (object,), {'META': {}})()
@@ -482,7 +488,7 @@ class AuthBackendTest(BaseOAuth2TestCase):
 
 
 class EnforceSecureTest(BaseOAuth2TestCase):
-    fixtures = ['test_oauth2']
+    fixtures = FIXTURES
 
     def setUp(self):
         constants.ENFORCE_SECURE = True
@@ -556,7 +562,7 @@ class ScopeTest(TestCase):
 
 
 class DeleteExpiredTest(BaseOAuth2TestCase):
-    fixtures = ['test_oauth2']
+    fixtures = FIXTURES
 
     def setUp(self):
         self._delete_expired = constants.DELETE_EXPIRED
