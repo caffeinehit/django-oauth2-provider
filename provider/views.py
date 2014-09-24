@@ -72,7 +72,8 @@ class Mixin(object):
         Clear all OAuth related data from the session store.
         """
         for key in request.session.keys():
-            if key.startswith(constants.SESSION_KEY):
+            session_key = constants.SESSION_KEY
+            if isinstance(key, basestring) and key.startswith(session_key):
                 del request.session[key]
 
     def authenticate(self, request):
