@@ -315,6 +315,17 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         return data
 
 
+class ClientCredentialsForm(ScopeMixin, OAuthForm):
+    """
+    Just get the scope.
+    """
+    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+
+    def clean(self):
+        data = self.cleaned_data
+        return data
+
+
 class PublicPasswordGrantForm(PasswordGrantForm):
     client_id = forms.CharField(required=True)
     grant_type = forms.CharField(required=True)
