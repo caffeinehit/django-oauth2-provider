@@ -94,9 +94,12 @@ class AccessTokenView(AccessTokenView):
         return form.cleaned_data
 
     def get_client_credentials_grant(self, request, data, client):
-        form = ClientCredentialsForm(data, client=client)
-        if not form.is_valid():
-            raise OAuthError(form.errors)
+        if request.user.is_authenticated():
+            form = ClientCredentialsForm(data, client=client)
+            if not form.is_valid():
+                raise OAuthError(form.errors)
+        else:
+            raise OAuthError({'error': 'user must be authenticated'})
         return form.cleaned_data
 
     def get_access_token(self, request, user, scope, client):
