@@ -7,6 +7,10 @@ class AccessTokenAdmin(admin.ModelAdmin):
     raw_id_fields = ('user',)
 
 
+class RefreshTokenAdmin(admin.ModelAdmin):
+    raw_id_fields = ('user', 'access_token')
+
+
 class GrantAdmin(admin.ModelAdmin):
     list_display = ('user', 'client', 'code', 'expires',)
     raw_id_fields = ('user',)
@@ -19,4 +23,4 @@ class ClientAdmin(admin.ModelAdmin):
 admin.site.register(AccessToken, AccessTokenAdmin)
 admin.site.register(Grant, GrantAdmin)
 admin.site.register(Client, ClientAdmin)
-admin.site.register(RefreshToken)
+admin.site.register(RefreshToken, RefreshTokenAdmin)
