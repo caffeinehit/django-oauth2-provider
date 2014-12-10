@@ -101,6 +101,12 @@ class AccessTokenView(AccessTokenView):
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
             self.create_refresh_token(request, user, scope, at, client)
+        except AccessToken.MultipleObjectsReturned:
+            # Simultaneously created tokens must be destroyeds
+            at = AccessToken.objects.filter(user=user, client=client,
+                                            scope=scope, expires__gt=now()).latest("pk")
+            AccessToken.objects.filter(user=user, client=client,
+                                       scope=scope, expires__gt=now()).exclude(pk=at.pk).delete()
         return at
 
     def create_access_token(self, request, user, scope, client):
