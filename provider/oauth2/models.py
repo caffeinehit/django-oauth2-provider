@@ -53,7 +53,7 @@ class Client(models.Model):
         return get_token_expiry(public)
 
     def serialize(self):
-        return dict(user=serialize_instance(self.user),
+        return dict(user=serialize_instance(self.user) if self.user else None,
                     name=self.name,
                     url=self.url,
                     redirect_uri=self.redirect_uri,

@@ -17,6 +17,27 @@ from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
 
 
+class ClientTest(TestCase):
+    def test_serialize__without_user(self):
+        # See https://github.com/caffeinehit/django-oauth2-provider/issues/51
+        client = Client(name='test name',
+                        url='localhost:5000',
+                        redirect_uri='localhost:5000/test/',
+                        client_id='tester',
+                        client_secret='secure',
+                        client_type=constants.PUBLIC)
+        valid_serialization = {
+            'client_id': 'tester',
+            'client_secret': 'secure',
+            'client_type': 1,
+            'name': 'test name',
+            'redirect_uri': 'localhost:5000/test/',
+            'url': 'localhost:5000',
+            'user': None
+        }
+        self.assertEqual(valid_serialization, client.serialize())
+
+
 @skipIfCustomUser
 class BaseOAuth2TestCase(TestCase):
     def login(self):
