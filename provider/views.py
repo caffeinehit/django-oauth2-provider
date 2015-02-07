@@ -1,6 +1,7 @@
 import json
 import urlparse
-from django.http import HttpResponse
+import django
+# from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
@@ -8,6 +9,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
 from . import constants, scope
 
+def HttpResponse(content, mimetype, **kwargs):
+    if '1.7' in django.get_version():
+        return django.http.HttpResponse(content, content_type=mimetype, **kwargs)
+    else:
+        return django.http.HttpResponse(content, mimetype=mimetype, **kwargs)
 
 class OAuthError(Exception):
     """
