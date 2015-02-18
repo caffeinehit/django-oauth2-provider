@@ -1,1 +1,1 @@
-__version__ = "0.2.7-fork-edx-2"
+__version__ = "0.2.8-fork-edx-2"
