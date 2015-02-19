@@ -72,7 +72,8 @@ class Mixin(object):
         Clear all OAuth related data from the session store.
         """
         for key in request.session.keys():
-            if key.startswith(constants.SESSION_KEY):
+            session_key = constants.SESSION_KEY
+            if isinstance(key, basestring) and key.startswith(session_key):
                 del request.session[key]
 
     def authenticate(self, request):
@@ -292,14 +293,13 @@ class Redirect(OAuthView, Mixin):
     an error.
     """
 
-    def error_response(self, error, mimetype='application/json', status=400,
-            **kwargs):
+    def error_response(self, error, status=400, **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        kwargs.setdefault('content_type', 'application/json')
+        return HttpResponse(json.dumps(error), status=status, **kwargs)
 
     def get(self, request):
         data = self.get_data(request)
@@ -457,19 +457,19 @@ class AccessToken(OAuthView, Mixin):
         """
         raise NotImplementedError
 
-    def error_response(self, error, mimetype='application/json', status=400,
-            **kwargs):
+    def error_response(self, error, status=400, **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        kwargs.setdefault('content_type', 'application/json')
+        return HttpResponse(json.dumps(error), status=status, **kwargs)
 
-    def access_token_response(self, access_token):
+    def access_token_response_data(self, access_token):
         """
-        Returns a successful response after creating the access token
-        as defined in :rfc:`5.1`.
+        Returns access token data as defined in :rfc:`5.1`.
+
+        Derived classes can override to add extra parameters.
         """
 
         response_data = {
@@ -487,8 +487,17 @@ class AccessToken(OAuthView, Mixin):
         except ObjectDoesNotExist:
             pass
 
+        return response_data
+
+    def access_token_response(self, access_token):
+        """
+        Returns a successful response after creating the access token
+        as defined in :rfc:`5.1`.
+        """
+        response_data = self.access_token_response_data(access_token)
+
         return HttpResponse(
-            json.dumps(response_data), mimetype='application/json'
+            json.dumps(response_data), content_type='application/json'
         )
 
     def authorization_code(self, request, data, client):
