@@ -116,6 +116,7 @@ class Grant(models.Model):
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
     scope = models.IntegerField(default=0)
+    extra_data = models.TextField(blank=True)
 
     def __unicode__(self):
         return self.code
@@ -147,6 +148,7 @@ class AccessToken(models.Model):
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
+    extra_data = models.TextField(blank=True)
 
     objects = AccessTokenManager()
 

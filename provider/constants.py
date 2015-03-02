@@ -4,11 +4,17 @@ from django.conf import settings
 CONFIDENTIAL = 0
 PUBLIC = 1
 INSECURE = 2
+SSO_ENDUSER_CONFIDENTIAL = 3
+SSO_ENDUSER_PUBLIC = 4
+SSO_ENDUSER_INSECURE = 4
 
 CLIENT_TYPES = (
     (CONFIDENTIAL, "Confidential (Web applications)"),
     (PUBLIC, "Public (Native and JS applications)"),
-    (INSECURE, "Insecure applications")
+    (INSECURE, "Insecure applications"),
+    (SSO_ENDUSER_CONFIDENTIAL, "SSO end-user application Confidential (Web applications)"),
+    (SSO_ENDUSER_PUBLIC, "SSO end-user application Public (Native and JS applications)"),
+    (SSO_ENDUSER_INSECURE, "SSO end-user application Insecure applications"),
 )
 
 RESPONSE_TYPE_CHOICES = getattr(settings, 'OAUTH_RESPONSE_TYPE_CHOICES', ("code", "token"))
@@ -17,12 +23,15 @@ TOKEN_TYPE = 'Bearer'
 
 READ = 1 << 1
 WRITE = 1 << 2
+ADMIN = 1 << 3
 READ_WRITE = READ | WRITE
+READ_WRITE_ADMIN = READ | WRITE | ADMIN
 
 DEFAULT_SCOPES = (
     (READ, 'read'),
     (WRITE, 'write'),
     (READ_WRITE, 'read+write'),
+    (READ_WRITE_ADMIN, 'read+write+admin'),
 )
 
 SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
