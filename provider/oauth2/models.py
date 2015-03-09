@@ -74,6 +74,14 @@ class Client(models.Model):
     def is_insecure(self):
       return self.client_type == constants.INSECURE
 
+    @property
+    def is_sso(self):
+      return self.client_type in constants.SSO_CLIENTS
+
+    @property
+    def is_socialbase(self):
+      return self.client_type in constants.SOCIALBASE_CLIENTS
+
     @classmethod
     def deserialize(cls, data):
         if not data:
