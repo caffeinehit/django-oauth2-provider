@@ -35,6 +35,7 @@ that are meant for client (as defined in :rfc:`1`) interaction.
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.conf.urls import patterns, url, include
 from .views import Authorize, Redirect, Capture, AccessTokenView
 
 
