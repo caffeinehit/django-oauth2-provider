@@ -1,4 +1,4 @@
-from provider.compat.urls import *
+from provider.compat.urls import patterns, include, url
 from django.contrib import admin
 
 admin.autodiscover()
