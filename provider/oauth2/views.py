@@ -1,17 +1,14 @@
 from datetime import timedelta
 from django.core.urlresolvers import reverse
-from .. import constants
-from ..views import Capture, Authorize, Redirect
-from ..views import AccessToken as AccessTokenView, OAuthError
-from ..utils import now
-from .forms import AuthorizationRequestForm, AuthorizationForm
-from .forms import PasswordGrantForm, RefreshTokenGrantForm
-from .forms import AuthorizationCodeGrantForm
-from .models import Client, RefreshToken, AccessToken
-from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
+from provider import constants
+from provider.views import CaptureViewBase, AuthorizeViewBase, RedirectViewBase
+from provider.views import AccessTokenViewBase, OAuthError
+from provider.utils import now
+from provider.oauth2 import forms
+from provider.oauth2 import models
+from provider.oauth2 import backends
 
-
-class Capture(Capture):
+class CaptureView(CaptureViewBase):
     """
     Implementation of :class:`provider.views.Capture`.
     """
@@ -19,20 +16,20 @@ class Capture(Capture):
         return reverse('oauth2:authorize')
 
 
-class Authorize(Authorize):
+class AuthorizeView(AuthorizeViewBase):
     """
     Implementation of :class:`provider.views.Authorize`.
     """
     def get_request_form(self, client, data):
-        return AuthorizationRequestForm(data, client=client)
+        return forms.AuthorizationRequestForm(data, client=client)
 
     def get_authorization_form(self, request, client, data, client_data):
-        return AuthorizationForm(data)
+        return forms.AuthorizationForm(data)
 
     def get_client(self, client_id):
         try:
-            return Client.objects.get(client_id=client_id)
-        except Client.DoesNotExist:
+            return models.Client.objects.get(client_id=client_id)
+        except models.Client.DoesNotExist:
             return None
 
     def get_redirect_url(self, request):
@@ -52,14 +49,14 @@ class Authorize(Authorize):
         return grant.code
 
 
-class Redirect(Redirect):
+class RedirectView(RedirectViewBase):
     """
     Implementation of :class:`provider.views.Redirect`
     """
     pass
 
 
-class AccessTokenView(AccessTokenView):
+class AccessTokenView(AccessTokenViewBase):
     """
     Implementation of :class:`provider.views.AccessToken`.
 
@@ -69,25 +66,25 @@ class AccessTokenView(AccessTokenView):
         *or* the :attr:`grant_types` list.
     """
     authentication = (
-        BasicClientBackend,
-        RequestParamsClientBackend,
-        PublicPasswordBackend,
+        backends.BasicClientBackend,
+        backends.RequestParamsClientBackend,
+        backends.PublicPasswordBackend,
     )
 
     def get_authorization_code_grant(self, request, data, client):
-        form = AuthorizationCodeGrantForm(data, client=client)
+        form = forms.AuthorizationCodeGrantForm(data, client=client)
         if not form.is_valid():
             raise OAuthError(form.errors)
         return form.cleaned_data.get('grant')
 
     def get_refresh_token_grant(self, request, data, client):
-        form = RefreshTokenGrantForm(data, client=client)
+        form = forms.RefreshTokenGrantForm(data, client=client)
         if not form.is_valid():
             raise OAuthError(form.errors)
         return form.cleaned_data.get('refresh_token')
 
     def get_password_grant(self, request, data, client):
-        form = PasswordGrantForm(data, client=client)
+        form = forms.PasswordGrantForm(data, client=client)
         if not form.is_valid():
             raise OAuthError(form.errors)
         return form.cleaned_data
@@ -95,23 +92,23 @@ class AccessTokenView(AccessTokenView):
     def get_access_token(self, request, user, scope, client):
         try:
             # Attempt to fetch an existing access token.
-            at = AccessToken.objects.get(user=user, client=client,
+            at = models.AccessToken.objects.get(user=user, client=client,
                                          scope=scope, expires__gt=now())
-        except AccessToken.DoesNotExist:
+        except models.AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
             self.create_refresh_token(request, user, scope, at, client)
         return at
 
     def create_access_token(self, request, user, scope, client):
-        return AccessToken.objects.create(
+        return models.AccessToken.objects.create(
             user=user,
             client=client,
             scope=scope
         )
 
     def create_refresh_token(self, request, user, scope, access_token, client):
-        return RefreshToken.objects.create(
+        return models.RefreshToken.objects.create(
             user=user,
             access_token=access_token,
             client=client

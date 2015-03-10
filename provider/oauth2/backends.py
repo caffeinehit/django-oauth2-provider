@@ -1,6 +1,6 @@
-from ..utils import now
-from .forms import ClientAuthForm, PublicPasswordGrantForm
-from .models import AccessToken
+from provider.utils import now
+from provider.oauth2.forms import ClientAuthForm, PublicPasswordGrantForm
+from provider.oauth2.models import AccessToken
 
 
 class BaseBackend(object):

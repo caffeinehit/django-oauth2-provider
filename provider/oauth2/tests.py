@@ -7,14 +7,14 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
-from .. import constants, scope
-from ..compat import skipIfCustomUser
-from ..templatetags.scope import scopes
-from ..utils import now as date_now
-from .forms import ClientForm
-from .models import Client, Grant, AccessToken, RefreshToken
-from .backends import BasicClientBackend, RequestParamsClientBackend
-from .backends import AccessTokenBackend
+from provider import constants, scope
+from provider.compat import skipIfCustomUser
+from provider.templatetags.scope import scopes
+from provider.utils import now as date_now
+from provider.oauth2.forms import ClientForm
+from provider.oauth2.models import Client, Grant, AccessToken, RefreshToken
+from provider.oauth2.backends import BasicClientBackend, RequestParamsClientBackend
+from provider.oauth2.backends import AccessTokenBackend
 
 
 @skipIfCustomUser

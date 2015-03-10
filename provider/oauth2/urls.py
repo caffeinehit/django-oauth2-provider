@@ -36,20 +36,19 @@ that are meant for client (as defined in :rfc:`1`) interaction.
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.conf.urls import patterns, url, include
-from .views import Authorize, Redirect, Capture, AccessTokenView
-
+from provider.oauth2 import views
 
 urlpatterns = patterns('',
     url('^authorize/?$',
-        login_required(Capture.as_view()),
+        login_required(views.CaptureView.as_view()),
         name='capture'),
     url('^authorize/confirm/?$',
-        login_required(Authorize.as_view()),
+        login_required(views.AuthorizeView.as_view()),
         name='authorize'),
     url('^redirect/?$',
-        login_required(Redirect.as_view()),
+        views.RedirectView.as_view(), #login_required(views.RedirectView.as_view()),
         name='redirect'),
     url('^access_token/?$',
-        csrf_exempt(AccessTokenView.as_view()),
+        csrf_exempt(views.AccessTokenView.as_view()),
         name='access_token'),
 )

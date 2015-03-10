@@ -44,7 +44,7 @@ class OAuthView(TemplateView):
         return response
 
 
-class Mixin(object):
+class AuthUtilMixin(object):
     """
     Mixin providing common methods required in the OAuth view defined in
     :attr:`provider.views`.
@@ -87,7 +87,7 @@ class Mixin(object):
         return None
 
 
-class Capture(OAuthView, Mixin):
+class CaptureViewBase(OAuthView, AuthUtilMixin):
     """
     As stated in section :rfc:`3.1.2.5` this view captures all the request
     parameters and redirects to another URL to avoid any leakage of request
@@ -131,7 +131,7 @@ class Capture(OAuthView, Mixin):
         return self.handle(request, request.POST)
 
 
-class Authorize(OAuthView, Mixin):
+class AuthorizeViewBase(OAuthView, AuthUtilMixin):
     """
     View to handle the client authorization as outlined in :rfc:`4`.
     Implementation must override a set of methods:
@@ -274,7 +274,7 @@ class Authorize(OAuthView, Mixin):
         # serializable because these values are stored as session data
         self.cache_data(request, data)
         self.cache_data(request, code, "code")
-        self.cache_data(request, client.serialize(), "client")
+        self.cache_data(request, client.pk, "client_pk")
 
         return HttpResponseRedirect(self.get_redirect_url(request))
 
@@ -285,7 +285,7 @@ class Authorize(OAuthView, Mixin):
         return self.handle(request, request.POST)
 
 
-class Redirect(OAuthView, Mixin):
+class RedirectViewBase(OAuthView, AuthUtilMixin):
     """
     Redirect the user back to the client with the right query parameters set.
     This can be either parameters indicating success or parameters indicating
@@ -305,10 +305,9 @@ class Redirect(OAuthView, Mixin):
         data = self.get_data(request)
         code = self.get_data(request, "code")
         error = self.get_data(request, "error")
-        client = self.get_data(request, "client")
+        client_pk = self.get_data(request, "client_pk")
 
-        # client must be properly deserialized to become a valid instance
-        client = Client.deserialize(client)
+        client = Client.objects.get(pk=client_pk)
 
         # this is an edge case that is caused by making a request with no data
         # it should only happen if this view is called manually, out of the
@@ -343,7 +342,7 @@ class Redirect(OAuthView, Mixin):
         return HttpResponseRedirect(redirect_uri)
 
 
-class AccessToken(OAuthView, Mixin):
+class AccessTokenViewBase(OAuthView, AuthUtilMixin):
     """
     :attr:`AccessToken` handles creation and refreshing of access tokens.
 
