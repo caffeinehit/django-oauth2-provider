@@ -10,7 +10,6 @@ from provider import constants
 from provider.constants import CLIENT_TYPES
 from provider.utils import now, short_token, long_token, get_code_expiry
 from provider.utils import get_token_expiry
-from provider.oauth2.managers import AccessTokenManager
 
 from django.utils import timezone
 
@@ -81,6 +80,11 @@ class Grant(models.Model):
     class Meta:
         app_label = 'oauth2'
         db_table = 'oauth2_grant'
+
+
+class AccessTokenManager(models.Manager):
+    def get_token(self, token):
+        return self.get(token=token, expires__gt=now())
 
 
 class AccessToken(models.Model):
