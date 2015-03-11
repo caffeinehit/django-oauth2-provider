@@ -47,7 +47,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'django-oauth2-provider'
+project = u'django-oauth2'
 copyright = u'2012, Alen Mujezinovic'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -171,7 +171,7 @@ html_theme = 'default'
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'django-oauth2-providerdoc'
+htmlhelp_basename = 'django-oauth2doc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -185,7 +185,7 @@ htmlhelp_basename = 'django-oauth2-providerdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'django-oauth2-provider.tex', u'django-oauth2-provider Documentation',
+  ('index', 'django-oauth2.tex', u'django-oauth2 Documentation',
    u'Alen Mujezinovic', 'manual'),
 ]
 
@@ -218,6 +218,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-oauth2-provider', u'django-oauth2-provider Documentation',
+    ('index', 'django-oauth2', u'django-oauth2 Documentation',
      [u'Alen Mujezinovic'], 1)
 ]

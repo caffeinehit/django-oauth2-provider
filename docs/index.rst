@@ -1,7 +1,7 @@
-Welcome to django-oauth2-provider's documentation!
+Welcome to django-oauth2's documentation!
 ==================================================
 
-*django-oauth2-provider* is a Django application that provides customizable OAuth2_ authentication for your Django projects. 
+*django-oauth2* is a Django application that provides customizable OAuth2_ authentication for your Django projects.
 
 The default implementation makes reasonable assumptions about the allowed  grant types and provides clients with two easy accessible URL endpoints. (:attr:`provider.oauth2.urls`)
 
