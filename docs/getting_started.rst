@@ -119,5 +119,5 @@ Add RemoteUserBackend to :attr:`AUTHENTICATION_BACKENDS`
 
 
 .. note:: The Oauth2UserMiddleware class reuses functionality used by the
-	  RemoteUserMiddleware class.  Omitting the RemoteUserBackend middleware
+	  RemoteUserMiddleware class.  Omitting the RemoteUserBackend
 	  will result in 500 errors.
