@@ -1,7 +1,7 @@
 import hashlib
 import shortuuid
 from django.conf import settings
-from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
+from provider.constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
 
 from django.utils import timezone
 
