@@ -32,19 +32,23 @@ class Oauth2UserMiddleware(object):
                 " Insert 'django.contrib.auth.middleware.AuthenticationMiddleware'"
                 " before this Oauth2UserMiddleware class."
             )
-        access_token_http = self._http_access_token(request)
-        access_token_get = request.GET.get('access_token', access_token_http)
-        access_token = request.POST.get('access_token', access_token_get)
-
-        if not access_token:
-            return
-
         try:
-            token = AccessToken.objects.get_token(access_token)
+            access_token_http = self._http_access_token(request)
+            access_token_get = request.GET.get('access_token', access_token_http)
+            access_token = request.POST.get('access_token', access_token_get)
+
+            if not access_token:
+                return
+
+            try:
+                token = AccessToken.objects.get_token(access_token)
+            except Exception as e:
+                log.error("Invalid access token: {} - "
+                          "{}: {}".format(access_token, e.__class__.__name__, e))
+            else:
+                user = auth.authenticate(remote_user=token.user.username)
+                auth.login(request, user)
+                request.oauth2_client = token.client
         except Exception as e:
-            log.error("Invalid access token: {} - "
-                      "{}: {}".format(access_token, e.__class__.__name__, e))
-        else:
-            user = auth.authenticate(remote_user=token.user.username)
-            auth.login(request, user)
-            request.oauth2_client = token.client
+            log.error("Oauth2UserMiddleware encountered an exception! "
+                      "{}: {}".format(e.__class__.__name__, e))
