@@ -38,6 +38,7 @@ class Client(models.Model):
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
+    auto_authorize = models.BooleanField(default=False, blank=True)
 
     def __unicode__(self):
         return self.redirect_uri
@@ -49,6 +50,58 @@ class Client(models.Model):
     class Meta:
         app_label = 'oauth2'
         db_table = 'oauth2_client'
+
+
+class Scope(models.Model):
+    name = models.CharField(max_length=15, primary_key=True)
+    description = models.CharField(max_length=256, default='', blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+    class Meta:
+        app_label = 'oauth2'
+        db_table = 'oauth2_scope'
+
+
+class AuthorizedClientManager(models.Manager):
+    def get_authorization(self, user, client):
+        return self.get(user=user, client=client)
+
+    def check_authorization_scope(self, user, client, scope_list):
+        try:
+            authorization = self.get_authorization(user, client)
+        except AuthorizedClient.DoesNotExist:
+            return None
+        authorized_scopes = {s.name for s in authorization.scope.all()}
+        if set(scope_list) <= authorized_scopes:
+            return authorization
+        return None
+
+    def set_authorization_scope(self, user, client, scope_list):
+        try:
+            authorization = self.get_authorization(user, client)
+        except AuthorizedClient.DoesNotExist:
+            authorization = self.create(user=user, client=client)
+            authorization.save()
+        for s in scope_list:
+            authorization.scope.add(s)
+        return authorization
+
+
+class AuthorizedClient(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             related_name='oauth2_authorized_client')
+    client = models.ForeignKey(Client)
+    scope = models.ManyToManyField(Scope)
+    authorized_at = models.DateTimeField(auto_now_add=True, blank=True)
+
+    objects = AuthorizedClientManager()
+
+    class Meta:
+        app_label = 'oauth2'
+        db_table = 'oauth2_authorizedclient'
+        unique_together = ['user', 'client']
 
 
 class Grant(models.Model):
@@ -72,7 +125,7 @@ class Grant(models.Model):
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
-    scope = models.IntegerField(default=0)
+    scope = models.ManyToManyField(Scope)
 
     def __unicode__(self):
         return self.code
@@ -111,8 +164,7 @@ class AccessToken(models.Model):
     token = models.CharField(max_length=255, default=long_token, db_index=True)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
-    scope = models.IntegerField(default=constants.SCOPES[0][0],
-            choices=constants.SCOPES)
+    scope = models.ManyToManyField(Scope)
 
     objects = AccessTokenManager()
 
@@ -142,6 +194,11 @@ class AccessToken(models.Model):
 
         timedelta = expiration - reference
         return timedelta.days*86400 + timedelta.seconds
+
+    def get_scope_string(self):
+        names = [s.name for s in self.scope.all()]
+        names.sort()
+        return ' '.join(names)
 
     class Meta:
         app_label = 'oauth2'

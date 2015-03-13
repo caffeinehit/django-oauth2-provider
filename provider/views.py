@@ -3,10 +3,10 @@ import urlparse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
-from django.views.generic.base import TemplateView
+from django.views.generic.base import TemplateView, View
 from django.core.exceptions import ObjectDoesNotExist
-from oauth2.models import Client
-from provider import constants, scope
+from oauth2.models import Client, Scope
+from provider import constants
 
 
 class OAuthError(Exception):
@@ -28,20 +28,6 @@ class OAuthError(Exception):
     :rfc:`5.2`.
 
     """
-
-
-class OAuthView(TemplateView):
-    """
-    Base class for any view dealing with the OAuth flow. This class overrides
-    the dispatch method of :attr:`TemplateView` to add no-caching headers to
-    every response as outlined in :rfc:`5.1`.
-    """
-
-    def dispatch(self, request, *args, **kwargs):
-        response = super(OAuthView, self).dispatch(request, *args, **kwargs)
-        response['Cache-Control'] = 'no-store'
-        response['Pragma'] = 'no-cache'
-        return response
 
 
 class AuthUtilMixin(object):
@@ -87,7 +73,7 @@ class AuthUtilMixin(object):
         return None
 
 
-class CaptureViewBase(OAuthView, AuthUtilMixin):
+class CaptureViewBase(AuthUtilMixin, TemplateView):
     """
     As stated in section :rfc:`3.1.2.5` this view captures all the request
     parameters and redirects to another URL to avoid any leakage of request
@@ -131,7 +117,7 @@ class CaptureViewBase(OAuthView, AuthUtilMixin):
         return self.handle(request, request.POST)
 
 
-class AuthorizeViewBase(OAuthView, AuthUtilMixin):
+class AuthorizeViewBase(AuthUtilMixin, TemplateView):
     """
     View to handle the client authorization as outlined in :rfc:`4`.
     Implementation must override a set of methods:
@@ -199,6 +185,18 @@ class AuthorizeViewBase(OAuthView, AuthUtilMixin):
         """
         raise NotImplementedError
 
+    def has_authorization(self, request, client, scope_list):
+        """
+        Check to see if there is a previous authorization request with the
+        requested scope permissions.
+
+        :param request:
+        :param client:
+        :param scope_list:
+        :return: ``False``, ``AuthorizedClient``
+        """
+        return False
+
     def _validate_client(self, request, data):
         """
         :return: ``tuple`` - ``(client or False, data or error)``
@@ -258,20 +256,30 @@ class AuthorizeViewBase(OAuthView, AuthUtilMixin):
         except OAuthError, e:
             return self.error_response(request, e.args[0], status=400)
 
+        scope_list = [s.name for s in
+                      data.get('scope', [])]
+        if self.has_authorization(request, client, scope_list):
+            post_data = {
+                'scope': scope_list,
+                'authorize': u'Authorize',
+            }
+
         authorization_form = self.get_authorization_form(request, client,
-            post_data, data)
+                                                         post_data, data)
 
         if not authorization_form.is_bound or not authorization_form.is_valid():
             return self.render_to_response({
                 'client': client,
                 'form': authorization_form,
-                'oauth_data': data, })
+                'oauth_data': data,
+            })
 
         code = self.save_authorization(request, client,
-            authorization_form, data)
+                                       authorization_form, data)
 
         # be sure to serialize any objects that aren't natively json
         # serializable because these values are stored as session data
+        data['scope'] = scope_list
         self.cache_data(request, data)
         self.cache_data(request, code, "code")
         self.cache_data(request, client.pk, "client_pk")
@@ -285,7 +293,7 @@ class AuthorizeViewBase(OAuthView, AuthUtilMixin):
         return self.handle(request, request.POST)
 
 
-class RedirectViewBase(OAuthView, AuthUtilMixin):
+class RedirectViewBase(AuthUtilMixin, View):
     """
     Redirect the user back to the client with the right query parameters set.
     This can be either parameters indicating success or parameters indicating
@@ -342,7 +350,7 @@ class RedirectViewBase(OAuthView, AuthUtilMixin):
         return HttpResponseRedirect(redirect_uri)
 
 
-class AccessTokenViewBase(OAuthView, AuthUtilMixin):
+class AccessTokenViewBase(AuthUtilMixin, TemplateView):
     """
     :attr:`AccessToken` handles creation and refreshing of access tokens.
 
@@ -475,7 +483,7 @@ class AccessTokenViewBase(OAuthView, AuthUtilMixin):
             'access_token': access_token.token,
             'token_type': constants.TOKEN_TYPE,
             'expires_in': access_token.get_expire_delta(),
-            'scope': ' '.join(scope.names(access_token.scope)),
+            'scope': access_token.get_scope_string(),
         }
 
         # Not all access_tokens are given a refresh_token

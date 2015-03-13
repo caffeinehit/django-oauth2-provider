@@ -19,9 +19,20 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('token', models.CharField(default=provider.utils.long_token, max_length=255, db_index=True)),
                 ('expires', models.DateTimeField()),
-                ('scope', models.IntegerField(default=2, choices=[(2, b'read'), (4, b'write'), (6, b'read+write')])),
             ],
             options={
+                'db_table': 'oauth2_accesstoken',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='AuthorizedClient',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('authorized_at', models.DateTimeField(auto_now_add=True)),
+            ],
+            options={
+                'db_table': 'oauth2_authorizedclient',
             },
             bases=(models.Model,),
         ),
@@ -35,9 +46,11 @@ class Migration(migrations.Migration):
                 ('client_id', models.CharField(default=provider.utils.short_token, max_length=255)),
                 ('client_secret', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('client_type', models.IntegerField(choices=[(0, b'Confidential (Web applications)'), (1, b'Public (Native and JS applications)')])),
-                ('user', models.ForeignKey(related_name=b'oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('auto_authorize', models.BooleanField(default=False)),
+                ('user', models.ForeignKey(related_name='oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
             ],
             options={
+                'db_table': 'oauth2_client',
             },
             bases=(models.Model,),
         ),
@@ -48,11 +61,10 @@ class Migration(migrations.Migration):
                 ('code', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('expires', models.DateTimeField(default=provider.utils.get_code_expiry)),
                 ('redirect_uri', models.CharField(max_length=255, blank=True)),
-                ('scope', models.IntegerField(default=0)),
                 ('client', models.ForeignKey(to='oauth2.Client')),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
             options={
+                'db_table': 'oauth2_grant',
             },
             bases=(models.Model,),
         ),
@@ -62,13 +74,59 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('token', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('expired', models.BooleanField(default=False)),
-                ('access_token', models.OneToOneField(related_name=b'refresh_token', to='oauth2.AccessToken')),
+                ('access_token', models.OneToOneField(related_name='refresh_token', to='oauth2.AccessToken')),
                 ('client', models.ForeignKey(to='oauth2.Client')),
                 ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
             options={
+                'db_table': 'oauth2_refreshtoken',
             },
             bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Scope',
+            fields=[
+                ('name', models.CharField(max_length=15, serialize=False, primary_key=True)),
+                ('description', models.CharField(default=b'', max_length=256, blank=True)),
+            ],
+            options={
+                'db_table': 'oauth2_scope',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='grant',
+            name='scope',
+            field=models.ManyToManyField(to='oauth2.Scope'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='grant',
+            name='user',
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='authorizedclient',
+            name='client',
+            field=models.ForeignKey(to='oauth2.Client'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='authorizedclient',
+            name='scope',
+            field=models.ManyToManyField(to='oauth2.Scope'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='authorizedclient',
+            name='user',
+            field=models.ForeignKey(related_name='oauth2_authorized_client', to=settings.AUTH_USER_MODEL),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='authorizedclient',
+            unique_together=set([('user', 'client')]),
         ),
         migrations.AddField(
             model_name='accesstoken',
@@ -78,8 +136,15 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='accesstoken',
+            name='scope',
+            field=models.ManyToManyField(to='oauth2.Scope'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='accesstoken',
             name='user',
             field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
             preserve_default=True,
         ),
-    ]
+        migrations.RunSQL("INSERT INTO oauth2_scope (name, description) values ('read', 'Read-Only access') "),
+        ]

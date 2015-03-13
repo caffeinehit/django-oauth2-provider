@@ -35,9 +35,25 @@ class AuthorizeView(AuthorizeViewBase):
     def get_redirect_url(self, request):
         return reverse('oauth2:redirect')
 
+    def has_authorization(self, request, client, scope_list):
+        authclient_mgr = models.AuthorizedClient.objects
+        if client.auto_authorize:
+            return True
+        auth = authclient_mgr.check_authorization_scope(request.user,
+                                                        client,
+                                                        scope_list)
+        return bool(auth)
+
     def save_authorization(self, request, client, form, client_data):
 
-        grant = form.save(commit=False)
+        scope_list = {s for s in form.cleaned_data['scope']}
+        models.AuthorizedClient.objects.set_authorization_scope(request.user,
+                                                                client,
+                                                                scope_list)
+
+        grant = form.save(user = request.user,
+                          client=client,
+                          redirect_uri=client_data.get('redirect_uri', ''))
 
         if grant is None:
             return None
