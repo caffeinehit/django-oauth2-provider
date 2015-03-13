@@ -99,6 +99,9 @@ class CaptureViewBase(AuthUtilMixin, TemplateView):
         """
         raise NotImplementedError
 
+    def validate_scopes(self, scope_list):
+        raise NotImplementedError
+
     def handle(self, request, data):
         self.cache_data(request, data)
 
@@ -108,7 +111,12 @@ class CaptureViewBase(AuthUtilMixin, TemplateView):
                 'next': None},
                 status=400)
 
-        return HttpResponseRedirect(self.get_redirect_url(request))
+        scope_list = [s for s in
+                      data.get('scope', '').split(' ') if s != '']
+        if self.validate_scopes(scope_list):
+            return HttpResponseRedirect(self.get_redirect_url(request))
+        else:
+            return HttpResponse("Invalid scope.")
 
     def get(self, request):
         return self.handle(request, request.GET)
@@ -253,7 +261,7 @@ class AuthorizeViewBase(AuthUtilMixin, TemplateView):
 
         try:
             client, data = self._validate_client(request, data)
-        except OAuthError, e:
+        except OAuthError as e:
             return self.error_response(request, e.args[0], status=400)
 
         scope_list = [s.name for s in

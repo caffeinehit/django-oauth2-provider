@@ -12,6 +12,12 @@ class CaptureView(CaptureViewBase):
     """
     Implementation of :class:`provider.views.Capture`.
     """
+
+    def validate_scopes(self, scope_list):
+        scopes = {s.name for s in
+                  models.Scope.objects.filter(name__in=scope_list)}
+        return set(scope_list).issubset(scopes)
+
     def get_redirect_url(self, request):
         return reverse('oauth2:authorize')
 
