@@ -5,7 +5,8 @@ python:
   - "2.7"
 # command to install dependencies
 install:
-    - pip install -q -r requirements.txt --use-mirrors
-#    - pip install -q $DJANGO --use-mirrors -U
+    - pip install -q -r requirements.txt
+    - pip install sqlparse
+    - pip install -q $DJANGO --upgrade
     - python setup.py develop
 script: ./test.sh
