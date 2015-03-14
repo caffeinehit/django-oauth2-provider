@@ -139,6 +139,21 @@ class AccessTokenManager(models.Manager):
     def get_token(self, token):
         return self.get(token=token, expires__gt=now())
 
+    # def get_scoped_token(self, user, client, scope):
+    #     obj = self.get(user=user, client=client, expires__gt=now())
+    #     obj_scopes = {s.name for s in obj.scope.all()}
+    #
+    #     set(scope).issubset(obj_scopes)
+
+    def create(self, scope=None, *args, **kwargs):
+        obj = super(AccessTokenManager, self).create(*args, **kwargs)
+        obj.save()
+        if not scope:
+            scope = list()
+        for s in scope:
+            obj.scope.add(s)
+        return obj
+
 
 class AccessToken(models.Model):
     """
@@ -205,6 +220,17 @@ class AccessToken(models.Model):
         db_table = 'oauth2_accesstoken'
 
 
+class RefreshTokenManager(models.Manager):
+    def create(self, scope=None, *args, **kwargs):
+        obj = super(RefreshTokenManager, self).create(*args, **kwargs)
+        obj.save()
+        if not scope:
+            scope = list()
+        for s in scope:
+            obj.scope.add(s)
+        return obj
+
+
 class RefreshToken(models.Model):
     """
     Default refresh token implementation. A refresh token can be swapped for a
@@ -224,6 +250,8 @@ class RefreshToken(models.Model):
             related_name='refresh_token')
     client = models.ForeignKey(Client)
     expired = models.BooleanField(default=False)
+
+    objects = RefreshTokenManager()
 
     def __unicode__(self):
         return self.token

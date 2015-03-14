@@ -3,10 +3,8 @@ from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
-from provider import scope
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
 from provider.forms import OAuthForm, OAuthValidationError
-from provider.scope import SCOPE_NAMES
 from provider.utils import now
 from provider.oauth2.models import Client, Grant, RefreshToken, Scope
 
@@ -192,19 +190,18 @@ class RefreshTokenGrantForm(ScopeModelMixin, OAuthForm):
         Make sure that the scope is less or equal to the previous scope!
         """
         data = self.cleaned_data
-        want_scope = data.get('scope') or 0
+
+        want_scope = data.get('scope') or None
         refresh_token = data.get('refresh_token')
         access_token = getattr(refresh_token, 'access_token', None) if \
             refresh_token else \
             None
-        has_scope = access_token.scope if access_token else 0
-
-        # Only check if we've actually got a scope in the data
-        # (read: All fields have been cleaned)
-        if want_scope is not 0 and not scope.check(want_scope, has_scope):
-            raise OAuthValidationError({'error': 'invalid_scope'})
-
-        return data
+        if refresh_token and want_scope:
+            want_scope = {s.name for s in want_scope}
+            has_scope = {s.name for s in access_token.scope.all()}
+            if want_scope.issubset(has_scope):
+                return data
+        raise OAuthValidationError({'error': 'invalid_scope'})
 
 
 class AuthorizationCodeGrantForm(ScopeModelMixin, OAuthForm):
@@ -234,16 +231,14 @@ class AuthorizationCodeGrantForm(ScopeModelMixin, OAuthForm):
         grant!
         """
         data = self.cleaned_data
-        want_scope = data.get('scope') or 0
+        want_scope = data.get('scope') or None
         grant = data.get('grant')
-        has_scope = grant.scope if grant else 0
-
-        # Only check if we've actually got a scope in the data
-        # (read: All fields have been cleaned)
-        if want_scope is not 0 and not scope.check(want_scope, has_scope):
-            raise OAuthValidationError({'error': 'invalid_scope'})
-
-        return data
+        if want_scope and grant:
+            has_scope = {s.name for s in grant.scope.all()}
+            want_scope = {s.name for s in want_scope}
+            if want_scope.issubset(has_scope):
+                return data
+        raise OAuthValidationError({'error': 'invalid_scope'})
 
 
 class PasswordGrantForm(ScopeModelMixin, OAuthForm):

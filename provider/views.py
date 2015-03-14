@@ -516,9 +516,10 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         if constants.SINGLE_ACCESS_TOKEN:
             at = self.get_access_token(request, grant.user, grant.scope, client)
         else:
-            at = self.create_access_token(request, grant.user, grant.scope, client)
-            rt = self.create_refresh_token(request, grant.user, grant.scope, at,
-                    client)
+            at = self.create_access_token(request, grant.user,
+                                          list(grant.scope.all()), client)
+            rt = self.create_refresh_token(request, grant.user,
+                                           list(grant.scope.all()), at, client)
 
         self.invalidate_grant(grant)
 
@@ -534,9 +535,11 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         self.invalidate_refresh_token(rt)
         self.invalidate_access_token(rt.access_token)
 
-        at = self.create_access_token(request, rt.user, rt.access_token.scope,
-                client)
-        rt = self.create_refresh_token(request, at.user, at.scope, at, client)
+        at = self.create_access_token(request, rt.user,
+                                      rt.access_token.scope.all(),
+                                      client)
+        rt = self.create_refresh_token(request, at.user,
+                                       at.scope.all(), at, client)
 
         return self.access_token_response(at)
 
