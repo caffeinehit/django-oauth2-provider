@@ -134,7 +134,7 @@ class AccessTokenView(AccessTokenViewBase):
         return models.RefreshToken.objects.create(
             user=user,
             access_token=access_token,
-            client=client
+            client=client,
         )
 
     def invalidate_grant(self, grant):

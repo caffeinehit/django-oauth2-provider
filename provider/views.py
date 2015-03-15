@@ -531,12 +531,14 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         """
         rt = self.get_refresh_token_grant(request, data, client)
 
+        token_scope = list(rt.access_token.scope.all())
+
         # this must be called first in case we need to purge expired tokens
         self.invalidate_refresh_token(rt)
         self.invalidate_access_token(rt.access_token)
 
         at = self.create_access_token(request, rt.user,
-                                      rt.access_token.scope.all(),
+                                      token_scope,
                                       client)
         rt = self.create_refresh_token(request, at.user,
                                        at.scope.all(), at, client)
