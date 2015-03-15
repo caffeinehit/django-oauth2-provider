@@ -116,7 +116,7 @@ class CaptureViewBase(AuthUtilMixin, TemplateView):
         if self.validate_scopes(scope_list):
             return HttpResponseRedirect(self.get_redirect_url(request))
         else:
-            return HttpResponse("Invalid scope.")
+            return HttpResponse("Invalid scope.", status=400)
 
     def get(self, request):
         return self.handle(request, request.GET)
@@ -243,7 +243,7 @@ class AuthorizeViewBase(AuthUtilMixin, TemplateView):
         # cached data and tell the resource owner. We will *not* redirect back
         # to the URL.
 
-        if error['error'] in ['redirect_uri', 'unauthorized_client']:
+        if error.get('error') in ['redirect_uri', 'unauthorized_client']:
             ctx.update(next='/')
             return self.render_to_response(ctx, **kwargs)
 
@@ -514,7 +514,7 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         grant = self.get_authorization_code_grant(request, request.POST,
                 client)
         if constants.SINGLE_ACCESS_TOKEN:
-            at = self.get_access_token(request, grant.user, grant.scope, client)
+            at = self.get_access_token(request, grant.user, grant.scope.all(), client)
         else:
             at = self.create_access_token(request, grant.user,
                                           list(grant.scope.all()), client)

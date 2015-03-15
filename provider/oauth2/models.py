@@ -139,11 +139,13 @@ class AccessTokenManager(models.Manager):
     def get_token(self, token):
         return self.get(token=token, expires__gt=now())
 
-    # def get_scoped_token(self, user, client, scope):
-    #     obj = self.get(user=user, client=client, expires__gt=now())
-    #     obj_scopes = {s.name for s in obj.scope.all()}
-    #
-    #     set(scope).issubset(obj_scopes)
+    def get_scoped_token(self, user, client, scope):
+        obj = self.get(user=user, client=client, expires__gt=now())
+        obj_scopes = {s.name for s in obj.scope.all()}
+        req_scopes = {s.name for s in scope}
+        if set(req_scopes).issubset(obj_scopes):
+            return obj
+        raise AccessToken.DoesNotExist
 
     def create(self, scope=None, *args, **kwargs):
         obj = super(AccessTokenManager, self).create(*args, **kwargs)

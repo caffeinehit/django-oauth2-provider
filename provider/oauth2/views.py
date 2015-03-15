@@ -114,8 +114,7 @@ class AccessTokenView(AccessTokenViewBase):
     def get_access_token(self, request, user, scope, client):
         try:
             # Attempt to fetch an existing access token.
-            at = models.AccessToken.objects.get(user=user, client=client,
-                                         scope=scope, expires__gt=now())
+            at = models.AccessToken.objects.get_scoped_token(user, client, scope)
         except models.AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
@@ -123,11 +122,13 @@ class AccessTokenView(AccessTokenViewBase):
         return at
 
     def create_access_token(self, request, user, scope, client):
-        return models.AccessToken.objects.create(
+        at = models.AccessToken.objects.create(
             user=user,
             client=client,
-            scope=scope
         )
+        for s in scope:
+            at.scope.add(s)
+        return at
 
     def create_refresh_token(self, request, user, scope, access_token, client):
         return models.RefreshToken.objects.create(

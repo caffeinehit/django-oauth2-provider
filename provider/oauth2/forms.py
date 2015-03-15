@@ -201,7 +201,7 @@ class RefreshTokenGrantForm(ScopeModelMixin, OAuthForm):
             has_scope = {s.name for s in access_token.scope.all()}
             if want_scope.issubset(has_scope):
                 return data
-        raise OAuthValidationError({'error': 'invalid_scope'})
+        raise OAuthValidationError({'error': 'invalid_grant'})
 
 
 class AuthorizationCodeGrantForm(ScopeModelMixin, OAuthForm):
@@ -238,7 +238,7 @@ class AuthorizationCodeGrantForm(ScopeModelMixin, OAuthForm):
             want_scope = {s.name for s in want_scope}
             if want_scope.issubset(has_scope):
                 return data
-        raise OAuthValidationError({'error': 'invalid_scope'})
+        raise OAuthValidationError({'error': 'invalid_grant'})
 
 
 class PasswordGrantForm(ScopeModelMixin, OAuthForm):
