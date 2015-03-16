@@ -513,13 +513,10 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         """
         grant = self.get_authorization_code_grant(request, request.POST,
                 client)
-        if constants.SINGLE_ACCESS_TOKEN:
-            at = self.get_access_token(request, grant.user, grant.scope.all(), client)
-        else:
-            at = self.create_access_token(request, grant.user,
-                                          list(grant.scope.all()), client)
-            rt = self.create_refresh_token(request, grant.user,
-                                           list(grant.scope.all()), at, client)
+        at = self.create_access_token(request, grant.user,
+                                      list(grant.scope.all()), client)
+        rt = self.create_refresh_token(request, grant.user,
+                                       list(grant.scope.all()), at, client)
 
         self.invalidate_grant(grant)
 
@@ -554,13 +551,10 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         user = data.get('user')
         scope = data.get('scope')
 
-        if constants.SINGLE_ACCESS_TOKEN:
-            at = self.get_access_token(request, user, scope, client)
-        else:
-            at = self.create_access_token(request, user, scope, client)
-            # Public clients don't get refresh tokens
-            if client.client_type != 1:
-                rt = self.create_refresh_token(request, user, scope, at, client)
+        at = self.create_access_token(request, user, scope, client)
+        # Public clients don't get refresh tokens
+        if client.client_type != 1:
+            rt = self.create_refresh_token(request, user, scope, at, client)
 
         return self.access_token_response(at)
 
