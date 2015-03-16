@@ -54,7 +54,7 @@ class BaseOAuth2TestCase(TestCase):
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
 
-        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0][1]})
+        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': 'read'})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
 
