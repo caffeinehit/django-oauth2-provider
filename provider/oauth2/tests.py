@@ -1,20 +1,23 @@
 import json
 import urlparse
 import datetime
+
 from django.http import QueryDict
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
+import mock
+
 from .. import constants, scope
 from ..compat import skipIfCustomUser
+from provider.constants import CONFIDENTIAL, READ
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
 from .models import Client, Grant, AccessToken, RefreshToken
-from .backends import BasicClientBackend, RequestParamsClientBackend
-from .backends import AccessTokenBackend
+from .backends import AccessTokenBackend, BasicClientBackend, RequestParamsClientBackend
 
 
 @skipIfCustomUser
@@ -109,7 +112,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
     def test_authorization_requires_supported_response_type(self):
         self.login()
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
+        response = self.client.get(
+            self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -144,7 +148,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_requires_a_valid_scope(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
+        response = self.client.get(
+            self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -211,7 +216,8 @@ class AccessTokenTest(BaseOAuth2TestCase):
         now = date_now()
         default_expiration_timedelta = constants.EXPIRE_DELTA
         current_expiration_timedelta = datetime.timedelta(seconds=token.get_expire_delta(reference=now))
-        self.assertTrue(abs(current_expiration_timedelta - default_expiration_timedelta) <= datetime.timedelta(seconds=1))
+        self.assertLessEqual(abs(current_expiration_timedelta - default_expiration_timedelta),
+                             datetime.timedelta(seconds=1))
 
     def test_fetching_access_token_with_invalid_client(self):
         self.login()
@@ -259,8 +265,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         token = json.loads(response.content)
 
         for prop in required_props:
-            self.assertIn(prop, token, "Access token response missing "
-                    "required property: %s" % prop)
+            self.assertIn(prop, token, "Access token response missing required property: %s" % prop)
 
         return token
 
@@ -283,8 +288,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         })
 
         self.assertEqual(400, response.status_code)
-        self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'],
-            response.content)
+        self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'], response.content)
 
     def test_fetching_single_access_token(self):
         constants.SINGLE_ACCESS_TOKEN = True
@@ -361,12 +365,11 @@ class AccessTokenTest(BaseOAuth2TestCase):
         })
 
         self.assertEqual(400, response.status_code)
-        self.assertEqual('invalid_grant', json.loads(response.content)['error'],
-            response.content)
+        self.assertEqual('invalid_grant', json.loads(response.content)['error'], response.content)
 
     def test_password_grant_public(self):
         c = self.get_client()
-        c.client_type = 1 # public
+        c.client_type = 1  # public
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -385,7 +388,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = 0  # confidential
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -401,7 +404,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential_no_secret(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = 0  # confidential
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -415,7 +418,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_invalid_password_public(self):
         c = self.get_client()
-        c.client_type = 1 # public
+        c.client_type = 1  # public
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -430,7 +433,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_invalid_password_confidential(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = 0  # confidential
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -475,8 +478,7 @@ class AuthBackendTest(BaseOAuth2TestCase):
         client = self.get_client()
         backend = AccessTokenBackend()
         token = AccessToken.objects.create(user=user, client=client)
-        authenticated = backend.authenticate(access_token=token.token,
-                client=client)
+        authenticated = backend.authenticate(access_token=token.token, client=client)
 
         self.assertIsNotNone(authenticated)
 
@@ -508,7 +510,7 @@ class EnforceSecureTest(BaseOAuth2TestCase):
 class ClientFormTest(TestCase):
     def test_client_form(self):
         form = ClientForm({'name': 'TestName', 'url': 'http://127.0.0.1:8000',
-            'redirect_uri': 'http://localhost:8000/'})
+                           'redirect_uri': 'http://localhost:8000/'})
 
         self.assertFalse(form.is_valid())
 
@@ -597,10 +599,8 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
         # make sure the grant is gone
         self.assertFalse(Grant.objects.filter(code=code).exists())
         # and verify that the AccessToken and RefreshToken exist
-        self.assertTrue(AccessToken.objects.filter(token=access_token)
-                        .exists())
-        self.assertTrue(RefreshToken.objects.filter(token=refresh_token)
-                        .exists())
+        self.assertTrue(AccessToken.objects.filter(token=access_token).exists())
+        self.assertTrue(RefreshToken.objects.filter(token=refresh_token).exists())
 
         # refresh the token
         response = self.client.post(self.access_token_url(), {
@@ -617,7 +617,58 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
         self.assertNotEquals(refresh_token, token['refresh_token'])
 
         # make sure the orig AccessToken and RefreshToken are gone
-        self.assertFalse(AccessToken.objects.filter(token=access_token)
-                         .exists())
-        self.assertFalse(RefreshToken.objects.filter(token=refresh_token)
-                         .exists())
+        self.assertFalse(AccessToken.objects.filter(token=access_token).exists())
+        self.assertFalse(RefreshToken.objects.filter(token=refresh_token).exists())
+
+
+class AccessTokenDetailViewTests(TestCase):
+    JSON_CONTENT_TYPE = 'application/json'
+
+    def setUp(self):
+        super(AccessTokenDetailViewTests, self)
+        self.user = User.objects.create_user('TEST-USER', 'user@example.com')
+        self.oauth_client = Client.objects.create(client_type=CONFIDENTIAL)
+
+    def assert_invalid_token_response(self, token):
+        """ Verifies that the view returns an invalid token response for the specified token. """
+        url = reverse('oauth2:access_token_detail', kwargs={'token': token})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 400)
+
+        self.assertEqual(response['Content-Type'], self.JSON_CONTENT_TYPE)
+        self.assertEqual(response.content, json.dumps({'error': 'invalid_token'}))
+
+    def test_invalid_token(self):
+        """
+        If the requested token is invalid for any reason (expired, doesn't exist, etc.) the view should return HTTP 400.
+        """
+        # Non-existent token
+        self.assert_invalid_token_response('abc')
+
+        # Expired token
+        access_token = AccessToken.objects.create(user=self.user, client=self.oauth_client,
+                                                  expires=datetime.datetime.min)
+        self.assert_invalid_token_response(access_token.token)
+
+    def test_valid_token(self):
+        """ If the token is valid, details about the token should be returned. """
+
+        expires = datetime.datetime(2016, 1, 1, 0, 0, 0)
+        access_token = AccessToken.objects.create(user=self.user, client=self.oauth_client, scope=READ, expires=expires)
+
+        url = reverse('oauth2:access_token_detail', kwargs={'token': access_token.token})
+
+        # Mock datetime.datetime.now() so that we can validate the expiration date
+        now = datetime.datetime(2015, 1, 1, 0, 0, 0)
+        with mock.patch('provider.oauth2.models.now', return_value=now):
+            response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], self.JSON_CONTENT_TYPE)
+
+        expected = {
+            'username': self.user.username,
+            'scope': 'read',
+            'expires_in': int((expires - now).total_seconds())
+        }
+        self.assertEqual(response.content, json.dumps(expected))
