@@ -1,5 +1,11 @@
 from datetime import timedelta
+import json
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
+from django.http import HttpResponseBadRequest, HttpResponse
+from django.views.generic import View
+
 from .. import constants
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
@@ -15,6 +21,7 @@ class Capture(Capture):
     """
     Implementation of :class:`provider.views.Capture`.
     """
+
     def get_redirect_url(self, request):
         return reverse('oauth2:authorize')
 
@@ -23,6 +30,7 @@ class Authorize(Authorize):
     """
     Implementation of :class:`provider.views.Authorize`.
     """
+
     def get_request_form(self, client, data):
         return AuthorizationRequestForm(data, client=client)
 
@@ -137,3 +145,35 @@ class AccessTokenView(AccessTokenView):
         else:
             at.expires = now() - timedelta(days=1)
             at.save()
+
+
+class AccessTokenDetailView(View):
+    """
+    This view returns info about a given access token. If the token does not exist or is expired, HTTP 400 is returned.
+
+    A successful response has HTTP status 200 and includes a JSON object containing the username, scope, and expiry
+    time (in seconds) for the access token.
+
+    Example
+        GET /access_token/abc123/
+
+        {
+            username: "some-user",
+            scope: "read",
+            expires_in: 60
+        }
+    """
+
+    def get(self, request, *args, **kwargs):
+        JSON_CONTENT_TYPE = 'application/json'
+
+        try:
+            access_token = AccessToken.objects.get_token(kwargs['token'])
+            content = {
+                'username': access_token.user.username,
+                'scope': access_token.get_scope_display(),
+                'expires_in': access_token.get_expire_delta()
+            }
+            return HttpResponse(json.dumps(content), content_type=JSON_CONTENT_TYPE)
+        except ObjectDoesNotExist:
+            return HttpResponseBadRequest(json.dumps({'error': 'invalid_token'}), content_type=JSON_CONTENT_TYPE)
