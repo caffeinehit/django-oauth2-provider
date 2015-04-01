@@ -151,8 +151,8 @@ class AccessTokenDetailView(View):
     """
     This view returns info about a given access token. If the token does not exist or is expired, HTTP 400 is returned.
 
-    A successful response has HTTP status 200 and includes a JSON object containing the username, scope, and expiry
-    time (in seconds) for the access token.
+    A successful response has HTTP status 200 and includes a JSON object containing the username, scope, and expiration
+     date-time (in ISO 8601 format, UTC timezone) for the access token.
 
     Example
         GET /access_token/abc123/
@@ -160,7 +160,7 @@ class AccessTokenDetailView(View):
         {
             username: "some-user",
             scope: "read",
-            expires_in: 60
+            expires: "2015-04-01T08:41:51"
         }
     """
 
@@ -172,7 +172,7 @@ class AccessTokenDetailView(View):
             content = {
                 'username': access_token.user.username,
                 'scope': access_token.get_scope_display(),
-                'expires_in': access_token.get_expire_delta()
+                'expires': access_token.expires.isoformat()
             }
             return HttpResponse(json.dumps(content), content_type=JSON_CONTENT_TYPE)
         except ObjectDoesNotExist:
