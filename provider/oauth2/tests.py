@@ -8,11 +8,10 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
-import mock
 
 from .. import constants, scope
+
 from ..compat import skipIfCustomUser
-from provider.constants import CONFIDENTIAL, READ
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
@@ -627,7 +626,7 @@ class AccessTokenDetailViewTests(TestCase):
     def setUp(self):
         super(AccessTokenDetailViewTests, self)
         self.user = User.objects.create_user('TEST-USER', 'user@example.com')
-        self.oauth_client = Client.objects.create(client_type=CONFIDENTIAL)
+        self.oauth_client = Client.objects.create(client_type=constants.CONFIDENTIAL)
 
     def assert_invalid_token_response(self, token):
         """ Verifies that the view returns an invalid token response for the specified token. """
@@ -653,22 +652,18 @@ class AccessTokenDetailViewTests(TestCase):
     def test_valid_token(self):
         """ If the token is valid, details about the token should be returned. """
 
-        expires = datetime.datetime(2016, 1, 1, 0, 0, 0)
-        access_token = AccessToken.objects.create(user=self.user, client=self.oauth_client, scope=READ, expires=expires)
+        access_token = AccessToken.objects.create(user=self.user, client=self.oauth_client, scope=constants.READ,
+                                                  expires=datetime.datetime(2016, 1, 1, 0, 0, 0))
 
         url = reverse('oauth2:access_token_detail', kwargs={'token': access_token.token})
 
-        # Mock datetime.datetime.now() so that we can validate the expiration date
-        now = datetime.datetime(2015, 1, 1, 0, 0, 0)
-        with mock.patch('provider.oauth2.models.now', return_value=now):
-            response = self.client.get(url)
-
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], self.JSON_CONTENT_TYPE)
 
         expected = {
             'username': self.user.username,
             'scope': 'read',
-            'expires_in': int((expires - now).total_seconds())
+            'expires': '2016-01-01T00:00:00'
         }
         self.assertEqual(response.content, json.dumps(expected))
