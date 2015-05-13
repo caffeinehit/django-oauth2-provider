@@ -72,7 +72,8 @@ class Client(models.Model):
 
     @property
     def is_insecure(self):
-      return self.client_type == constants.INSECURE
+      return self.client_type in (constants.INSECURE,
+                                  constants.SSO_ENDUSER_INSECURE)
 
     @property
     def is_sso(self):
