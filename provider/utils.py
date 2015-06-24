@@ -11,7 +11,7 @@ from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
 
 try:
     import json
-except ImporError:
+except ImportError:
     import simplejson as json
 
 try:
