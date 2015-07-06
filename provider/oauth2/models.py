@@ -45,6 +45,9 @@ class Client(models.Model):
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
     client_extra_attr = models.TextField(blank=True)
+    
+    class Meta:
+        app_label = 'provider.oauth2'
 
     def __unicode__(self):
         return self.redirect_uri
@@ -127,7 +130,10 @@ class Grant(models.Model):
     redirect_uri = models.CharField(max_length=255, blank=True)
     scope = models.IntegerField(default=0)
     extra_data = models.TextField(blank=True)
-
+    
+    class Meta:
+        app_label = 'provider.oauth2'
+    
     def __unicode__(self):
         return self.code
 
@@ -161,6 +167,9 @@ class AccessToken(models.Model):
     extra_data = models.TextField(blank=True)
 
     objects = AccessTokenManager()
+    
+    class Meta:
+        app_label = 'provider.oauth2'
 
     def __unicode__(self):
         return self.token
@@ -209,6 +218,9 @@ class RefreshToken(models.Model):
             related_name='refresh_token')
     client = models.ForeignKey(Client)
     expired = models.BooleanField(default=False)
+    
+    class Meta:
+        app_label = 'provider.oauth2'
 
     def __unicode__(self):
         return self.token
