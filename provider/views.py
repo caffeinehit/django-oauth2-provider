@@ -10,7 +10,7 @@ from oauth2.models import Client
 from . import constants, scope
 
 def HttpResponse(content, content_type, **kwargs):
-    if '1.7' in django.get_version():
+    if '1.7' in django.get_version() or '1.8' in django.get_version():
         return django.http.HttpResponse(content, content_type=content_type, **kwargs)
     else:
         return django.http.HttpResponse(content, mimetype=content_type, **kwargs)
