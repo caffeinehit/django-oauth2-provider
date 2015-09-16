@@ -36,6 +36,13 @@ class Client(models.Model):
 
     Clients are outlined in the :rfc:`2` and its subsections.
     """
+
+    class Meta:
+        # In Django 1.7, this is required so that Django recognizes
+        # this model as part of "oauth2" instead of "provider.oauth2".
+        # See https://code.djangoproject.com/ticket/23348
+        app_label = "oauth2"
+
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
         blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
