@@ -105,6 +105,9 @@ class Grant(models.Model):
     * :attr:`redirect_uri`
     * :attr:`scope`
     """
+    class Meta:
+        app_label = "oauth2"
+
     user = models.ForeignKey(AUTH_USER_MODEL)
     client = models.ForeignKey(Client)
     code = models.CharField(max_length=255, default=long_token)
@@ -136,6 +139,9 @@ class AccessToken(models.Model):
     * :meth:`get_expire_delta` - returns an integer representing seconds to
         expiry
     """
+    class Meta:
+        app_label = "oauth2"
+
     user = models.ForeignKey(AUTH_USER_MODEL)
     token = models.CharField(max_length=255, default=long_token, db_index=True)
     client = models.ForeignKey(Client)
@@ -186,6 +192,9 @@ class RefreshToken(models.Model):
     * :attr:`client` - :class:`Client`
     * :attr:`expired` - ``boolean``
     """
+    class Meta:
+        app_label = "oauth2"
+
     user = models.ForeignKey(AUTH_USER_MODEL)
     token = models.CharField(max_length=255, default=long_token)
     access_token = models.OneToOneField(AccessToken,
