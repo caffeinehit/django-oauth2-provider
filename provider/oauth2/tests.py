@@ -122,9 +122,20 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code, response.content)
 
+        # Token authorization redirects to redirect_uri
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=token' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
-        self.assertEqual(200, response.status_code)
+        self.assertEqual(302, response.status_code)
+
+    def test_token_authorization_redirects_to_correct_uri(self):
+        self.login()
+
+        self.client.get(self.auth_url() + '?client_id=%s&response_type=token' % self.get_client().client_id)
+        response = self.client.get(self.auth_url2())
+        self.assertEqual(302, response.status_code)
+        url, fragment = response.get('location').split('#')
+        self.assertEqual(url, self.get_client().redirect_uri)
+        self.assertTrue('access_token' in urlparse.parse_qs(fragment))
 
     def test_authorization_requires_a_valid_redirect_uri(self):
         self.login()

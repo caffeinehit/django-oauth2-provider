@@ -6,3 +6,5 @@ _build
 dist
 build
 venv
+/.project
+/.pydevproject
