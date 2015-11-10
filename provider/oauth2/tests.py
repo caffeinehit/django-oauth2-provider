@@ -579,7 +579,7 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
         self.assertTrue('code' in location)
 
         # verify that Grant with code exists
-        code = urlparse.parse_qs(location)['code'][0]
+        code = urlparse.parse_qs(location.split('?')[1])['code'][0]
         self.assertTrue(Grant.objects.filter(code=code).exists())
 
         # use the code/grant
