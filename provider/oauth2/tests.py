@@ -48,9 +48,15 @@ class BaseOAuth2TestCase(TestCase):
     def get_password(self):
         return 'test'
 
+    def get_auth_params(self, response_type="code", **kwargs):
+        kwargs.setdefault("client_id", self.get_client().client_id)
+        if response_type:
+            kwargs["response_type"] = response_type
+        return kwargs
+
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
-            url_func = lambda: self.auth_url() + '?client_id=%s&response_type=code&state=abc' % self.get_client().client_id
+            url_func = lambda: self.auth_url() + '?client_id={0}&response_type=code&state=abc'.format(self.get_client().client_id)
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
@@ -95,7 +101,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
     def test_authorization_rejects_invalid_client_id(self):
         self.login()
-        response = self.client.get(self.auth_url() + '?client_id=123')
+        response = self.client.get(self.auth_url(), data={"client_id": 123})
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -103,7 +109,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
     def test_authorization_requires_response_type(self):
         self.login()
-        response = self.client.get(self.auth_url() + '?client_id=%s' % self.get_client().client_id)
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(response_type=None))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -112,34 +118,112 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_requires_supported_response_type(self):
         self.login()
         response = self.client.get(
-            self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
+            self.auth_url(), self.get_auth_params(response_type="unsupported"))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
+        response = self.client.get(self.auth_url(), data=self.get_auth_params())
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code, response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=token' % self.get_client().client_id)
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code)
 
+    def test_token_authorization_redirects_to_correct_uri(self):
+        self.login()
+
+        response1 = self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"), follow=True)
+
+        # confirm the resulting "do you agree" section.
+        # We can skip the csrf mapping during tests.
+        response2 = self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(302, response2.status_code)
+        url, fragment = response2.get('location').split('#')
+        self.assertEqual(url, self.get_client().redirect_uri)
+        self.assertTrue('access_token' in urlparse.parse_qs(fragment))
+
+    def test_token_ignores_expired_tokens(self):
+        constants.SINGLE_ACCESS_TOKEN = True
+        AccessToken.objects.create(
+            user=self.get_user(),
+            client=self.get_client(),
+            expires=date_now() - datetime.timedelta(days=1),
+        )
+
+        self.login()
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(AccessToken.objects.count(), 2)
+        constants.SINGLE_ACCESS_TOKEN = False
+
+    def test_token_doesnt_return_tokens_from_another_client(self):
+        constants.SINGLE_ACCESS_TOKEN = True
+
+        # Different client than we'll be submitting an RPC for.
+        AccessToken.objects.create(
+            user=self.get_user(),
+            client=Client.objects.get(pk=1)
+        )
+
+        self.login()
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(AccessToken.objects.count(), 2)
+        constants.SINGLE_ACCESS_TOKEN = False
+
+    def test_token_authorization_respects_single_access_token_constant(self):
+        constants.SINGLE_ACCESS_TOKEN = True
+        self.login()
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(AccessToken.objects.count(), 1)
+
+        # Second request.
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(AccessToken.objects.count(), 1)
+        constants.SINGLE_ACCESS_TOKEN = False
+
+    def test_token_authorization_can_do_multi_access_tokens(self):
+        constants.SINGLE_ACCESS_TOKEN = False
+        self.login()
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(AccessToken.objects.count(), 1)
+
+        # Second request.
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
+
+        self.assertEqual(AccessToken.objects.count(), 2)
+
+    def test_token_authorization_cancellation(self):
+        constants.SINGLE_ACCESS_TOKEN = False
+        self.login()
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
+        self.client.post(self.auth_url2())
+
+        self.assertEqual(AccessToken.objects.count(), 0)
+        
     def test_authorization_requires_a_valid_redirect_uri(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
-            self.get_client().client_id,
-            self.get_client().redirect_uri + '-invalid'))
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri + '-invalid'))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
-            self.get_client().client_id,
-            self.get_client().redirect_uri))
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(200, response.status_code)
@@ -147,32 +231,25 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_requires_a_valid_scope(self):
         self.login()
 
-        response = self.client.get(
-            self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(scope="invalid"))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content)
+        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content, 'Expected `{0}` in {1}'.format(escape(u"'invalid' is not a valid scope."), response.content))
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
-            self.get_client().client_id,
-            constants.SCOPES[0][1]))
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(scope=constants.SCOPES[0][1]))
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code)
 
     def test_authorization_is_not_granted(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
+        response = self.client.get(self.auth_url(), data=self.get_auth_params(response_type="code"))
         response = self.client.get(self.auth_url2())
 
         response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0][1]})
         self.assertEqual(302, response.status_code, response.content)
-        self.assertTrue(self.redirect_url() in response['Location'])
-
-        response = self.client.get(self.redirect_url())
-
-        self.assertEqual(302, response.status_code)
+        self.assertTrue(self.get_client().redirect_uri in response['Location'], '{0} not in {1}'.format(self.redirect_url(), response['Location']))
         self.assertTrue('error=access_denied' in response['Location'])
         self.assertFalse('code' in response['Location'])
 
@@ -579,7 +656,7 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
         self.assertTrue('code' in location)
 
         # verify that Grant with code exists
-        code = urlparse.parse_qs(location.split('?')[1])['code'][0]
+        code = urlparse.parse_qs(urlparse.urlparse(location).query)['code'][0]
         self.assertTrue(Grant.objects.filter(code=code).exists())
 
         # use the code/grant

@@ -1,4 +1,5 @@
 import json
+import urllib
 import urlparse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
@@ -6,7 +7,10 @@ from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
+from oauth2.models import AccessToken as AccessTokenModel
 from . import constants, scope
+from .utils import now
+from django.utils.http import urlencode
 
 
 class OAuthError(Exception):
@@ -262,11 +266,50 @@ class Authorize(OAuthView, Mixin):
         authorization_form = self.get_authorization_form(request, client,
             post_data, data)
 
-        if not authorization_form.is_bound or not authorization_form.is_valid():
-            return self.render_to_response({
-                'client': client,
-                'form': authorization_form,
-                'oauth_data': data, })
+        if data.get('response_type', None):
+            if not (authorization_form.is_bound and authorization_form.is_valid()):
+                return self.render_to_response({
+                    'client': client,
+                    'form': authorization_form,
+                    'oauth_data': data,
+                })
+
+            if not authorization_form.cleaned_data['authorize']:
+                # User hit cancel.
+                response_data = {
+                    "error": "access_denied",
+                    "error_description": "The user denied the scope request.",
+                    "state": data.get('state'),
+                }
+
+                url = "{0}?{1}".format(
+                    client.redirect_uri, urllib.urlencode(response_data))
+
+                return HttpResponseRedirect(url)
+
+            if data.get('response_type') == 'token':
+                #uses request.user as the urls.py already required login_required
+                lookup_kwargs = {
+                    "user": request.user,
+                    "client": client,
+                }
+
+                if data.get('scope'):
+                    lookup_kwargs['scope'] = data.get('scope')
+
+                atm = None
+                if constants.SINGLE_ACCESS_TOKEN:
+                    try:
+                        atm = AccessTokenModel.objects.get(
+                            expires__gt=now(), **lookup_kwargs)
+                    except AccessTokenModel.DoesNotExist:
+                        pass  # Fall through to non-single-access token case
+
+                if not atm:
+                    atm = AccessTokenModel.objects.create(**lookup_kwargs)
+
+                at = AccessToken()
+                return at.access_token_response(atm, data)
 
         code = self.save_authorization(request, client,
             authorization_form, data)
@@ -489,12 +532,21 @@ class AccessToken(OAuthView, Mixin):
 
         return response_data
 
-    def access_token_response(self, access_token):
+    def access_token_response(self, access_token, data=None):
         """
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
         """
         response_data = self.access_token_response_data(access_token)
+
+        if data is not None and data.get('response_type') == 'token':
+            basepath = data.get("redirect_uri")
+            if not basepath:
+                basepath = access_token.client.redirect_uri
+            if len(data.get('state', '')) > 0:
+                response_data['state'] = data.get('state')
+            path = "{0}#{1}".format(basepath, urlencode(response_data))
+            return HttpResponseRedirect(path)
 
         return HttpResponse(
             json.dumps(response_data), content_type='application/json'
