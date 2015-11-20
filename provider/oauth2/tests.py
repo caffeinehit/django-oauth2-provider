@@ -11,7 +11,6 @@ from django.contrib.auth.models import User
 
 from .. import constants, scope
 
-from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
@@ -19,7 +18,6 @@ from .models import Client, Grant, AccessToken, RefreshToken
 from .backends import AccessTokenBackend, BasicClientBackend, RequestParamsClientBackend
 
 
-@skipIfCustomUser
 class BaseOAuth2TestCase(TestCase):
     def login(self):
         self.client.login(username='test-user-1', password='test')
@@ -213,7 +211,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.client.post(self.auth_url2())
 
         self.assertEqual(AccessToken.objects.count(), 0)
-        
+
     def test_authorization_requires_a_valid_redirect_uri(self):
         self.login()
 
