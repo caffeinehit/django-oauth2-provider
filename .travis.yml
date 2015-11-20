@@ -1,11 +1,14 @@
+sudo: false
 language: python
 env:
   - DJANGO="django>=1.8,<1.9"
 python:
   - "2.7"
+
 # command to install dependencies
 install:
-    - pip install -q -r requirements.txt --use-mirrors
-    - pip install -q $DJANGO --use-mirrors -U
+    - pip install -U pip wheel
+    - pip install -r requirements.txt
+    - pip install -U $DJANGO
     - python setup.py develop
 script: ./test.sh
