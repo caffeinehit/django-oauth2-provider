@@ -33,13 +33,13 @@ that are meant for client (as defined in :rfc:`1`) interaction.
 
 """
 
+from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from ..compat.urls import *
+
 from .views import Authorize, Redirect, Capture, AccessTokenView, AccessTokenDetailView
 
-
-urlpatterns = patterns('',
+urlpatterns = [
     url('^authorize/?$',
         login_required(Capture.as_view()),
         name='capture'),
@@ -55,4 +55,4 @@ urlpatterns = patterns('',
     url('^access_token/(?P<token>[\w]+)/$',
         csrf_exempt(AccessTokenDetailView.as_view()),
         name='access_token_detail'),
-)
+]
