@@ -1,3 +1,4 @@
+coverage==4.0.2
 Django>=1.8,<1.9
 mock==1.0.1
 shortuuid==0.3

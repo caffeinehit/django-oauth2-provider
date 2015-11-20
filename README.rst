@@ -4,6 +4,9 @@ django-oauth2-provider
 .. image:: https://travis-ci.org/edx/django-oauth2-provider.svg?branch=edx
     :target: https://travis-ci.org/edx/django-oauth2-provider
 
+.. image:: http://codecov.io/github/edx/django-oauth2-provider/coverage.svg?branch=master
+    :target: http://codecov.io/github/edx/django-oauth2-provider?branch=master
+
 *django-oauth2-provider* is a Django application that provides
 customizable OAuth2\-authentication for your Django projects.
 
