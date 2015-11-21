@@ -18,3 +18,12 @@ script:
 
 after_success:
   - codecov
+
+deploy:
+  provider: pypi
+  user: edx
+  password:
+    secure: vq1P/q8v0doD55DGSvL8geAo4+ADz71kqCQJeZcXLfX3ICWAbW/l7eKpJNcp3wE7j2T45QpTp8L84PAL71Lh9gQho0R3mH3kDFTESn/03PSJAfjyuOMLRP+cCKE5UZ5FVg3vA3ZZRN2qHFX+5WlalbZjQgPf1HMX9n3YDdiWg0I=
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
