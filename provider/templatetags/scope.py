@@ -1,5 +1,6 @@
 from django import template
-from .. import scope
+
+from provider import scope
 
 register = template.Library()
 

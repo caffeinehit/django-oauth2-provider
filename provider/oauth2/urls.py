@@ -37,7 +37,7 @@ from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
-from .views import Authorize, Redirect, Capture, AccessTokenView, AccessTokenDetailView
+from provider.oauth2.views import Authorize, Redirect, Capture, AccessTokenView, AccessTokenDetailView
 
 urlpatterns = [
     url('^authorize/?$',

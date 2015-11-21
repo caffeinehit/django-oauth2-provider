@@ -1,4 +1,4 @@
-from ..utils import now
+from provider.utils import now
 from django.db import models
 
 

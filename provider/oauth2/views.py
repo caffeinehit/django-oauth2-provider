@@ -6,15 +6,15 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseBadRequest, HttpResponse
 from django.views.generic import View
 
-from .. import constants
-from ..views import Capture, Authorize, Redirect
-from ..views import AccessToken as AccessTokenView, OAuthError
-from ..utils import now
-from .forms import AuthorizationRequestForm, AuthorizationForm
-from .forms import PasswordGrantForm, RefreshTokenGrantForm
-from .forms import AuthorizationCodeGrantForm
-from .models import Client, RefreshToken, AccessToken
-from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
+from provider import constants
+from provider.oauth2.backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
+from provider.oauth2.forms import AuthorizationCodeGrantForm
+from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm
+from provider.oauth2.forms import PasswordGrantForm, RefreshTokenGrantForm
+from provider.oauth2.models import Client, RefreshToken, AccessToken
+from provider.utils import now
+from provider.views import AccessToken as AccessTokenView, OAuthError
+from provider.views import Capture, Authorize, Redirect
 
 
 class Capture(Capture):
