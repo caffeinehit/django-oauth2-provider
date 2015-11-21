@@ -1,21 +1,20 @@
+import datetime
 import json
 import urlparse
-import datetime
 
-from django.http import QueryDict
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.utils.html import escape
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.http import QueryDict
+from django.test import TestCase
+from django.utils.html import escape
 
-from .. import constants, scope
-
-from ..templatetags.scope import scopes
-from ..utils import now as date_now
-from .forms import ClientForm
-from .models import Client, Grant, AccessToken, RefreshToken
-from .backends import AccessTokenBackend, BasicClientBackend, RequestParamsClientBackend
+from provider import constants, scope
+from provider.oauth2.backends import AccessTokenBackend, BasicClientBackend, RequestParamsClientBackend
+from provider.oauth2.forms import ClientForm
+from provider.oauth2.models import Client, Grant, AccessToken, RefreshToken
+from provider.templatetags.scope import scopes
+from provider.utils import now as date_now
 
 
 class BaseOAuth2TestCase(TestCase):
@@ -54,7 +53,8 @@ class BaseOAuth2TestCase(TestCase):
 
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
-            url_func = lambda: self.auth_url() + '?client_id={0}&response_type=code&state=abc'.format(self.get_client().client_id)
+            url_func = lambda: self.auth_url() + '?client_id={0}&response_type=code&state=abc'.format(
+                self.get_client().client_id)
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
@@ -215,13 +215,15 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_requires_a_valid_redirect_uri(self):
         self.login()
 
-        response = self.client.get(self.auth_url(), data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri + '-invalid'))
+        response = self.client.get(self.auth_url(),
+                                   data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri + '-invalid'))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
 
-        response = self.client.get(self.auth_url(), data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri))
+        response = self.client.get(self.auth_url(),
+                                   data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(200, response.status_code)
@@ -233,7 +235,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content, 'Expected `{0}` in {1}'.format(escape(u"'invalid' is not a valid scope."), response.content))
+        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content,
+                        'Expected `{0}` in {1}'.format(escape(u"'invalid' is not a valid scope."), response.content))
 
         response = self.client.get(self.auth_url(), data=self.get_auth_params(scope=constants.SCOPES[0][1]))
         response = self.client.get(self.auth_url2())
@@ -247,7 +250,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
         response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0][1]})
         self.assertEqual(302, response.status_code, response.content)
-        self.assertTrue(self.get_client().redirect_uri in response['Location'], '{0} not in {1}'.format(self.redirect_url(), response['Location']))
+        self.assertTrue(self.get_client().redirect_uri in response['Location'],
+                        '{0} not in {1}'.format(self.redirect_url(), response['Location']))
         self.assertTrue('error=access_denied' in response['Location'])
         self.assertFalse('code' in response['Location'])
 

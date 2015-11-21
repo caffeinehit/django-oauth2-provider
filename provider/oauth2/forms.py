@@ -2,18 +2,20 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
-from .. import scope
-from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
-from ..forms import OAuthForm, OAuthValidationError
-from ..scope import SCOPE_NAMES
-from ..utils import now
-from .models import Client, Grant, RefreshToken
+
+from provider import scope
+from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
+from provider.forms import OAuthForm, OAuthValidationError
+from provider.oauth2.models import Client, Grant, RefreshToken
+from provider.scope import SCOPE_NAMES
+from provider.utils import now
 
 
 class ClientForm(forms.ModelForm):
     """
     Form to create new consumers.
     """
+
     class Meta:
         model = Client
         fields = ('name', 'url', 'redirect_uri', 'client_type')
@@ -36,10 +38,10 @@ class ClientAuthForm(forms.Form):
         data = self.cleaned_data
         try:
             client = Client.objects.get(client_id=data.get('client_id'),
-                client_secret=data.get('client_secret'))
+                                        client_secret=data.get('client_secret'))
         except Client.DoesNotExist:
             raise forms.ValidationError(_("Client could not be validated with "
-                "key pair."))
+                                          "key pair."))
 
         data['client'] = client
         return data
@@ -80,13 +82,14 @@ class ScopeChoiceField(forms.ChoiceField):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("'%s' is not a valid scope.") % \
-                            val})
+                                         val})
 
 
 class ScopeMixin(object):
     """
     Form mixin to clean scope fields.
     """
+
     def clean_scope(self):
         """
         The scope is assembled by combining all the set flags into a single
@@ -143,7 +146,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
         if not response_type:
             raise OAuthValidationError({'error': 'invalid_request',
-                'error_description': "No 'response_type' supplied."})
+                                        'error_description': "No 'response_type' supplied."})
 
         types = response_type.split(" ")
 
@@ -152,7 +155,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
                 raise OAuthValidationError({
                     'error': 'unsupported_response_type',
                     'error_description': u"'%s' is not a supported response "
-                        "type." % type})
+                                         "type." % type})
 
         return response_type
 
@@ -168,7 +171,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("The requested redirect didn't "
-                        "match the client settings.")})
+                                           "match the client settings.")})
 
         return redirect_uri
 
@@ -206,7 +209,7 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
 
         try:
             token = RefreshToken.objects.get(token=token,
-                expired=False, client=self.client)
+                                             expired=False, client=self.client)
         except RefreshToken.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_grant'})
 
@@ -299,7 +302,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         data = self.cleaned_data
 
         user = authenticate(username=data.get('username'),
-            password=data.get('password'))
+                            password=data.get('password'))
 
         if user is None:
             raise OAuthValidationError({'error': 'invalid_grant'})
@@ -328,7 +331,7 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         except Client.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_client'})
 
-        if client.client_type != 1: # public
+        if client.client_type != 1:  # public
             raise OAuthValidationError({'error': 'invalid_client'})
 
         data['client'] = client
