@@ -1,6 +1,6 @@
 language: python
 env:
-  - DJANGO="django>=1.7,<1.8"
+  - DJANGO="django>=1.7,<1.9"
 python:
   - "2.7"
 # command to install dependencies
