@@ -2,6 +2,7 @@ import datetime
 import json
 import urlparse
 
+import ddt
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -64,6 +65,7 @@ class BaseOAuth2TestCase(TestCase):
         self.assertTrue(self.redirect_url() in response['Location'])
 
 
+@ddt.ddt
 class AuthorizationTest(BaseOAuth2TestCase):
     fixtures = ['test_oauth2']
 
@@ -89,17 +91,40 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
         self.assertTrue(self.auth_url2() in response['Location'])
 
-    def test_authorization_requires_client_id(self):
+    @ddt.data(
+        ('read', 'read'),
+        ('write', 'write'),
+        ('read+write', 'read write read+write'),
+    )
+    @ddt.unpack
+    def test_implicit_flow(self, requested_scope, expected_scope):
+        """
+        End-to-end test of the implicit flow (happy path).
+        """
         self.login()
-        response = self.client.get(self.auth_url())
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type='token', scope=requested_scope))
+        response = self.client.post(self.auth_url2(), {'authorize': True})
+        fragment = urlparse.urlparse(response['Location']).fragment
+        auth_response_data = {k: v[0] for k, v in urlparse.parse_qs(fragment).items()}
+        self.assertEqual(auth_response_data['scope'], expected_scope)
+        self.assertEqual(auth_response_data['access_token'], AccessToken.objects.all()[0].token)
+        self.assertEqual(auth_response_data['token_type'], 'Bearer')
+        self.assertEqual(int(auth_response_data['expires_in']), constants.EXPIRE_DELTA.days * 60 * 60 * 24 - 1)
+        self.assertNotIn('refresh_token', response)
+
+    @ddt.data('code', 'token')
+    def test_authorization_requires_client_id(self, response_type):
+        self.login()
+        self.client.get(self.auth_url(), data={'response_type': response_type})
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
         self.assertTrue("An unauthorized client tried to access your resources." in response.content)
 
-    def test_authorization_rejects_invalid_client_id(self):
+    @ddt.data('code', 'token')
+    def test_authorization_rejects_invalid_client_id(self, response_type):
         self.login()
-        response = self.client.get(self.auth_url(), data={"client_id": 123})
+        response = self.client.get(self.auth_url(), data={"client_id": 123, 'response_type': response_type})
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
@@ -113,22 +138,19 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"No 'response_type' supplied.") in response.content)
 
-    def test_authorization_requires_supported_response_type(self):
+    @ddt.data('code', 'token', 'unsupported')
+    def test_authorization_requires_supported_response_type(self, response_type):
         self.login()
         response = self.client.get(
-            self.auth_url(), self.get_auth_params(response_type="unsupported"))
+            self.auth_url(), self.get_auth_params(response_type=response_type))
         response = self.client.get(self.auth_url2())
 
-        self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
+        if response_type == 'unsupported':
+            self.assertEqual(400, response.status_code)
+            self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
 
-        response = self.client.get(self.auth_url(), data=self.get_auth_params())
-        response = self.client.get(self.auth_url2())
-        self.assertEqual(200, response.status_code, response.content)
-
-        response = self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
-        response = self.client.get(self.auth_url2())
-        self.assertEqual(200, response.status_code)
+        else:
+            self.assertEqual(200, response.status_code)
 
     def test_token_authorization_redirects_to_correct_uri(self):
         self.login()
@@ -212,48 +234,83 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
         self.assertEqual(AccessToken.objects.count(), 0)
 
-    def test_authorization_requires_a_valid_redirect_uri(self):
+    @ddt.data('code', 'token')
+    def test_authorization_requires_a_valid_redirect_uri(self, response_type):
         self.login()
 
-        response = self.client.get(self.auth_url(),
-                                   data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri + '-invalid'))
+        self.client.get(
+            self.auth_url(),
+            data=self.get_auth_params(
+                response_type=response_type, redirect_uri=self.get_client().redirect_uri + '-invalid'
+            )
+        )
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
 
-        response = self.client.get(self.auth_url(),
-                                   data=self.get_auth_params(redirect_uri=self.get_client().redirect_uri))
+        self.client.get(self.auth_url(), data=self.get_auth_params(
+            response_type=response_type, redirect_uri=self.get_client().redirect_uri))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(200, response.status_code)
 
-    def test_authorization_requires_a_valid_scope(self):
+    @ddt.data('code', 'token')
+    def test_authorization_requires_a_valid_scope(self, response_type):
         self.login()
 
-        response = self.client.get(self.auth_url(), data=self.get_auth_params(scope="invalid"))
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type=response_type, scope="invalid"))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
         self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content,
                         'Expected `{0}` in {1}'.format(escape(u"'invalid' is not a valid scope."), response.content))
 
-        response = self.client.get(self.auth_url(), data=self.get_auth_params(scope=constants.SCOPES[0][1]))
+        self.client.get(
+            self.auth_url(),
+            data=self.get_auth_params(response_type=response_type, scope=constants.SCOPES[0][1])
+        )
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code)
 
-    def test_authorization_is_not_granted(self):
+    @ddt.data('code', 'token')
+    def test_authorization_sets_default_scope(self, response_type):
+
+        self.login()
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type=response_type))
+        response = self.client.post(self.auth_url2(), {'authorize': True})
+
+        if response_type == 'code':
+            # authorization code flow
+            response = self.client.get(self.redirect_url())
+            query = urlparse.urlparse(response['Location']).query
+            code = urlparse.parse_qs(query)['code'][0]
+            response = self.client.post(self.access_token_url(), {
+                'grant_type': 'authorization_code',
+                'client_id': self.get_client().client_id,
+                'client_secret': self.get_client().client_secret,
+                'code': code})
+            scope_str = json.loads(response.content).get('scope')
+        else:
+            # implicit flow
+            fragment = urlparse.urlparse(response['Location']).fragment
+            scope_str = urlparse.parse_qs(fragment)['scope'][0]
+
+        self.assertEqual(scope_str, constants.SCOPES[0][1])
+
+    @ddt.data('code', 'token')
+    def test_authorization_is_not_granted(self, response_type):
         self.login()
 
-        response = self.client.get(self.auth_url(), data=self.get_auth_params(response_type="code"))
-        response = self.client.get(self.auth_url2())
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type=response_type))
+        self.client.get(self.auth_url2())
 
         response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0][1]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.get_client().redirect_uri in response['Location'],
                         '{0} not in {1}'.format(self.redirect_url(), response['Location']))
         self.assertTrue('error=access_denied' in response['Location'])
-        self.assertFalse('code' in response['Location'])
+        self.assertFalse(response_type in response['Location'])
 
     def test_authorization_is_granted(self):
         self.login()
@@ -276,6 +333,17 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.assertEqual(302, response.status_code)
         self.assertFalse('error' in response['Location'])
         self.assertTrue('code' in response['Location'])
+        self.assertTrue('state=abc' in response['Location'])
+
+    def test_preserving_the_state_variable_implicit(self):
+        self.login()
+
+        self.client.get(self.auth_url(), data=self.get_auth_params(response_type='token', state='abc'))
+        self.client.get(self.auth_url2())
+        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0][1]})
+        self.assertEqual(302, response.status_code)
+        self.assertFalse('error' in response['Location'])
+        self.assertTrue('access_token=' in response['Location'])
         self.assertTrue('state=abc' in response['Location'])
 
     def test_redirect_requires_valid_data(self):

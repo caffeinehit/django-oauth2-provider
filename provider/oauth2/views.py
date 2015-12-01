@@ -13,8 +13,51 @@ from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm
 from provider.oauth2.forms import PasswordGrantForm, RefreshTokenGrantForm
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.utils import now
-from provider.views import AccessToken as AccessTokenView, OAuthError
+from provider.views import AccessToken as AccessTokenView, OAuthError, AccessTokenMixin
 from provider.views import Capture, Authorize, Redirect
+
+
+class OAuth2AccessTokenMixin(AccessTokenMixin):
+
+    def get_access_token(self, request, user, scope, client):
+        try:
+            # Attempt to fetch an existing access token.
+            at = AccessToken.objects.get(user=user, client=client,
+                                         scope=scope, expires__gt=now())
+        except AccessToken.DoesNotExist:
+            # None found... make a new one!
+            at = self.create_access_token(request, user, scope, client)
+            self.create_refresh_token(request, user, scope, at, client)
+        return at
+
+    def create_access_token(self, request, user, scope, client):
+        return AccessToken.objects.create(
+            user=user,
+            client=client,
+            scope=scope
+        )
+
+    def create_refresh_token(self, request, user, scope, access_token, client):
+        return RefreshToken.objects.create(
+            user=user,
+            access_token=access_token,
+            client=client
+        )
+
+    def invalidate_refresh_token(self, rt):
+        if constants.DELETE_EXPIRED:
+            rt.delete()
+        else:
+            rt.expired = True
+            rt.save()
+
+    def invalidate_access_token(self, at):
+        if constants.DELETE_EXPIRED:
+            at.delete()
+        else:
+            at.expires = now() - timedelta(milliseconds=1)
+            at.save()
+
 
 
 class Capture(Capture):
@@ -26,7 +69,7 @@ class Capture(Capture):
         return reverse('oauth2:authorize')
 
 
-class Authorize(Authorize):
+class Authorize(Authorize, OAuth2AccessTokenMixin):
     """
     Implementation of :class:`provider.views.Authorize`.
     """
@@ -67,7 +110,7 @@ class Redirect(Redirect):
     pass
 
 
-class AccessTokenView(AccessTokenView):
+class AccessTokenView(AccessTokenView, OAuth2AccessTokenMixin):
     """
     Implementation of :class:`provider.views.AccessToken`.
 
@@ -100,51 +143,12 @@ class AccessTokenView(AccessTokenView):
             raise OAuthError(form.errors)
         return form.cleaned_data
 
-    def get_access_token(self, request, user, scope, client):
-        try:
-            # Attempt to fetch an existing access token.
-            at = AccessToken.objects.get(user=user, client=client,
-                                         scope=scope, expires__gt=now())
-        except AccessToken.DoesNotExist:
-            # None found... make a new one!
-            at = self.create_access_token(request, user, scope, client)
-            self.create_refresh_token(request, user, scope, at, client)
-        return at
-
-    def create_access_token(self, request, user, scope, client):
-        return AccessToken.objects.create(
-            user=user,
-            client=client,
-            scope=scope
-        )
-
-    def create_refresh_token(self, request, user, scope, access_token, client):
-        return RefreshToken.objects.create(
-            user=user,
-            access_token=access_token,
-            client=client
-        )
-
     def invalidate_grant(self, grant):
         if constants.DELETE_EXPIRED:
             grant.delete()
         else:
             grant.expires = now() - timedelta(days=1)
             grant.save()
-
-    def invalidate_refresh_token(self, rt):
-        if constants.DELETE_EXPIRED:
-            rt.delete()
-        else:
-            rt.expired = True
-            rt.save()
-
-    def invalidate_access_token(self, at):
-        if constants.DELETE_EXPIRED:
-            at.delete()
-        else:
-            at.expires = now() - timedelta(days=1)
-            at.save()
 
 
 class AccessTokenDetailView(View):
