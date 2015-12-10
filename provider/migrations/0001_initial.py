@@ -22,6 +22,9 @@ class Migration(migrations.Migration):
                 ('scope', models.IntegerField(default=2, choices=[(2, b'read'), (4, b'write'), (6, b'read+write'), (14, b'read+write+admin')])),
                 ('extra_data', models.TextField(blank=True)),
             ],
+            options={
+            },
+            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Client',
@@ -36,6 +39,9 @@ class Migration(migrations.Migration):
                 ('client_extra_attr', models.TextField(blank=True)),
                 ('user', models.ForeignKey(related_name='oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
             ],
+            options={
+            },
+            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='Grant',
@@ -49,6 +55,9 @@ class Migration(migrations.Migration):
                 ('client', models.ForeignKey(to='provider.Client')),
                 ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
+            options={
+            },
+            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='RefreshToken',
@@ -60,15 +69,20 @@ class Migration(migrations.Migration):
                 ('client', models.ForeignKey(to='provider.Client')),
                 ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
+            options={
+            },
+            bases=(models.Model,),
         ),
         migrations.AddField(
             model_name='accesstoken',
             name='client',
             field=models.ForeignKey(to='provider.Client'),
+            preserve_default=True,
         ),
         migrations.AddField(
             model_name='accesstoken',
             name='user',
             field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            preserve_default=True,
         ),
     ]
