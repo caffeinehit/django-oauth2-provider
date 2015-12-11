@@ -304,7 +304,10 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
         username = data.get('username')
 
         if '@' in username:
-            username = User.objects.get(email=username).username
+            user = User.objects.filter(email=username).first()
+            if not user:
+                raise OAuthValidationError({'error': 'invalid_grant'})
+            username = user.username
 
         user = authenticate(username=username, password=data.get('password'))
 
