@@ -11,7 +11,6 @@ addons:
 install:
   - pip install -U pip wheel codecov
   - pip install -r requirements.txt
-  - python setup.py develop
 
 script:
   - ./test.sh
