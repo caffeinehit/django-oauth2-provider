@@ -10,10 +10,10 @@ addons:
 
 install:
   - pip install -U pip wheel codecov
-  - pip install -r requirements.txt
+  - make requirements
 
 script:
-  - ./test.sh
+  - make test
 
 after_success:
   - codecov
