@@ -799,8 +799,9 @@ class AccessTokenDetailViewTests(TestCase):
     def test_valid_token(self):
         """ If the token is valid, details about the token should be returned. """
 
+        expires = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         access_token = AccessToken.objects.create(user=self.user, client=self.oauth_client, scope=constants.READ,
-                                                  expires=datetime.datetime(2016, 1, 1, 0, 0, 0))
+                                                  expires=expires)
 
         url = reverse('oauth2:access_token_detail', kwargs={'token': access_token.token})
 
@@ -811,6 +812,6 @@ class AccessTokenDetailViewTests(TestCase):
         expected = {
             'username': self.user.username,
             'scope': 'read',
-            'expires': '2016-01-01T00:00:00'
+            'expires': expires.isoformat()
         }
         self.assertEqual(response.content, json.dumps(expected))
