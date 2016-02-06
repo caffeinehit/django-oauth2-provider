@@ -9,3 +9,4 @@ venv
 *.sqlite
 .coverage
 .idea/
+htmlcov/
