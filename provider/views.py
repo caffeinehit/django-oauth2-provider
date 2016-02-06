@@ -521,7 +521,7 @@ class AccessToken(OAuthView, Mixin, AccessTokenMixin):
     Authentication backends used to authenticate a particular client.
     """
 
-    grant_types = ['authorization_code', 'refresh_token', 'password']
+    grant_types = ['authorization_code', 'refresh_token', 'password', 'client_credentials']
     """
     The default grant types supported by this view.
     """
@@ -547,6 +547,14 @@ class AccessToken(OAuthView, Mixin, AccessTokenMixin):
         Return a user associated with this request or an error dict.
 
         :return: ``tuple`` - ``(True or False, user or error_dict)``
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def get_client_credentials_grant(self, request, data, client):
+        """
+        Return the optional parameters (scope) associated with this request.
+
+        :return: ``tuple`` - ``(True or False, options)``
         """
         raise NotImplementedError  # pragma: no cover
 
@@ -637,6 +645,21 @@ class AccessToken(OAuthView, Mixin, AccessTokenMixin):
 
         return self.access_token_response(at)
 
+    def client_credentials(self, request, data, client):
+        """ Handle ``grant_type=client_credentials`` requests as defined in :rfc:`4.4`. """
+        data = self.get_client_credentials_grant(request, data, client)
+        kwargs = {
+            'request': request,
+            'user': client.user,
+            'scope': data.get('scope'),
+            'client': client,
+            'reuse_existing_access_token': constants.SINGLE_ACCESS_TOKEN,
+            'create_refresh_token': False,
+        }
+        at, rt = self.get_access_and_refresh_tokens(**kwargs)
+
+        return self.access_token_response(at)
+
     def get_handler(self, grant_type):
         """
         Return a function or method that is capable handling the ``grant_type``
@@ -649,6 +672,8 @@ class AccessToken(OAuthView, Mixin, AccessTokenMixin):
             return self.refresh_token
         elif grant_type == 'password':
             return self.password
+        elif grant_type == 'client_credentials':
+            return self.client_credentials
         return None
 
     def get(self, request):

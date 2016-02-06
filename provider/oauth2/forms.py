@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
-from provider import scope
+from provider import constants, scope
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
 from provider.forms import OAuthForm, OAuthValidationError
 from provider.oauth2.models import Client, Grant, RefreshToken
@@ -336,3 +336,14 @@ class PublicPasswordGrantForm(PasswordGrantForm):
 
         data['client'] = client
         return data
+
+
+class ClientCredentialsGrantForm(ScopeMixin, OAuthForm):
+    """ Validate a client credentials grant request. """
+
+    def clean(self):
+        cleaned_data = super(ClientCredentialsGrantForm, self).clean()
+        # We do not fully support scopes for this grant type; however, a scope is required
+        # in order to create an access token. Default to read-only access.
+        cleaned_data['scope'] = constants.READ
+        return cleaned_data
