@@ -24,7 +24,6 @@ class OAuth2AccessTokenMixin(AccessTokenMixin):
         except AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
-            self.create_refresh_token(request, user, scope, at, client)
         return at
 
     def create_access_token(self, request, user, scope, client):
