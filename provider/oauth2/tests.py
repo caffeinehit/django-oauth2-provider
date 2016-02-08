@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 from django.http import QueryDict
 from django.test import TestCase
 from django.utils.html import escape
+from mock import patch
 
 from provider import constants, scope
 from provider.oauth2.backends import AccessTokenBackend, BasicClientBackend, RequestParamsClientBackend
@@ -166,8 +167,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.assertEqual(url, self.get_client().redirect_uri)
         self.assertTrue('access_token' in urlparse.parse_qs(fragment))
 
+    @patch('provider.constants.SINGLE_ACCESS_TOKEN', True)
     def test_token_ignores_expired_tokens(self):
-        constants.SINGLE_ACCESS_TOKEN = True
         AccessToken.objects.create(
             user=self.get_user(),
             client=self.get_client(),
@@ -179,11 +180,9 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
 
         self.assertEqual(AccessToken.objects.count(), 2)
-        constants.SINGLE_ACCESS_TOKEN = False
 
+    @patch('provider.constants.SINGLE_ACCESS_TOKEN', True)
     def test_token_doesnt_return_tokens_from_another_client(self):
-        constants.SINGLE_ACCESS_TOKEN = True
-
         # Different client than we'll be submitting an RPC for.
         AccessToken.objects.create(
             user=self.get_user(),
@@ -195,10 +194,9 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
 
         self.assertEqual(AccessToken.objects.count(), 2)
-        constants.SINGLE_ACCESS_TOKEN = False
 
+    @patch('provider.constants.SINGLE_ACCESS_TOKEN', True)
     def test_token_authorization_respects_single_access_token_constant(self):
-        constants.SINGLE_ACCESS_TOKEN = True
         self.login()
         self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
         self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
@@ -210,10 +208,9 @@ class AuthorizationTest(BaseOAuth2TestCase):
         self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
 
         self.assertEqual(AccessToken.objects.count(), 1)
-        constants.SINGLE_ACCESS_TOKEN = False
 
+    @patch('provider.constants.SINGLE_ACCESS_TOKEN', False)
     def test_token_authorization_can_do_multi_access_tokens(self):
-        constants.SINGLE_ACCESS_TOKEN = False
         self.login()
         self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
         self.client.post(self.auth_url2(), data={'authorize': 'Authorize'})
@@ -226,8 +223,8 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
         self.assertEqual(AccessToken.objects.count(), 2)
 
+    @patch('provider.constants.SINGLE_ACCESS_TOKEN', False)
     def test_token_authorization_cancellation(self):
-        constants.SINGLE_ACCESS_TOKEN = False
         self.login()
         self.client.get(self.auth_url(), data=self.get_auth_params(response_type="token"))
         self.client.post(self.auth_url2())
@@ -436,19 +433,14 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual(400, response.status_code)
         self.assertEqual('unsupported_grant_type', json.loads(response.content)['error'], response.content)
 
+    @patch('provider.constants.SINGLE_ACCESS_TOKEN', True)
     def test_fetching_single_access_token(self):
-        constants.SINGLE_ACCESS_TOKEN = True
-
         result1 = self._login_authorize_get_token()
         result2 = self._login_authorize_get_token()
 
         self.assertEqual(result1['access_token'], result2['access_token'])
 
-        constants.SINGLE_ACCESS_TOKEN = False
-
     def test_fetching_single_access_token_after_refresh(self):
-        constants.SINGLE_ACCESS_TOKEN = True
-
         token = self._login_authorize_get_token()
 
         self.client.post(self.access_token_url(), {
@@ -460,8 +452,6 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         new_token = self._login_authorize_get_token()
         self.assertNotEqual(token['access_token'], new_token['access_token'])
-
-        constants.SINGLE_ACCESS_TOKEN = False
 
     def test_fetching_access_token_multiple_times(self):
         self._login_authorize_get_token()
@@ -534,7 +524,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential(self):
         c = self.get_client()
-        c.client_type = 0  # confidential
+        c.client_type = constants.CONFIDENTIAL
         c.save()
 
         response = self.client.post(self.access_token_url(), {

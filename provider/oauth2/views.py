@@ -8,13 +8,11 @@ from django.views.generic import View
 
 from provider import constants
 from provider.oauth2.backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
-from provider.oauth2.forms import AuthorizationCodeGrantForm
-from provider.oauth2.forms import AuthorizationRequestForm, AuthorizationForm
-from provider.oauth2.forms import PasswordGrantForm, RefreshTokenGrantForm
+from provider.oauth2.forms import (AuthorizationCodeGrantForm, AuthorizationRequestForm, AuthorizationForm,
+                                   PasswordGrantForm, RefreshTokenGrantForm)
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.utils import now
-from provider.views import AccessToken as AccessTokenView, OAuthError, AccessTokenMixin
-from provider.views import Capture, Authorize, Redirect
+from provider.views import AccessToken as AccessTokenView, OAuthError, AccessTokenMixin, Capture, Authorize, Redirect
 
 
 class OAuth2AccessTokenMixin(AccessTokenMixin):
@@ -22,8 +20,7 @@ class OAuth2AccessTokenMixin(AccessTokenMixin):
     def get_access_token(self, request, user, scope, client):
         try:
             # Attempt to fetch an existing access token.
-            at = AccessToken.objects.get(user=user, client=client,
-                                         scope=scope, expires__gt=now())
+            at = AccessToken.objects.get(user=user, client=client, scope=scope, expires__gt=now())
         except AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
