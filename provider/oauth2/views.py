@@ -9,7 +9,7 @@ from django.views.generic import View
 from provider import constants
 from provider.oauth2.backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
 from provider.oauth2.forms import (AuthorizationCodeGrantForm, AuthorizationRequestForm, AuthorizationForm,
-                                   PasswordGrantForm, RefreshTokenGrantForm)
+                                   PasswordGrantForm, RefreshTokenGrantForm, ClientCredentialsGrantForm)
 from provider.oauth2.models import Client, RefreshToken, AccessToken
 from provider.utils import now
 from provider.views import AccessToken as AccessTokenView, OAuthError, AccessTokenMixin, Capture, Authorize, Redirect
@@ -24,7 +24,6 @@ class OAuth2AccessTokenMixin(AccessTokenMixin):
         except AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
-            self.create_refresh_token(request, user, scope, at, client)
         return at
 
     def create_access_token(self, request, user, scope, client):
@@ -136,6 +135,12 @@ class AccessTokenView(AccessTokenView, OAuth2AccessTokenMixin):
 
     def get_password_grant(self, request, data, client):
         form = PasswordGrantForm(data, client=client)
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data
+
+    def get_client_credentials_grant(self, request, data, client):
+        form = ClientCredentialsGrantForm(data, client=client)
         if not form.is_valid():
             raise OAuthError(form.errors)
         return form.cleaned_data

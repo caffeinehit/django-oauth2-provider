@@ -588,6 +588,71 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual(token['token_type'], constants.TOKEN_TYPE, token)
 
 
+@ddt.ddt
+class ClientCredentialsAccessTokenTests(BaseOAuth2TestCase):
+    """ Tests for issuing access tokens using the client credentials grant. """
+    fixtures = ['test_oauth2.json']
+
+    def setUp(self):
+        super(ClientCredentialsAccessTokenTests, self).setUp()
+        AccessToken.objects.all().delete()
+
+    def request_access_token(self, client_id=None, client_secret=None):
+        """ Issues an access token request using the client credentials grant.
+
+        Arguments:
+            client_id (str): Optional override of the client ID credential.
+            client_secret (str): Optional override of the client secret credential.
+
+        Returns:
+            HttpResponse
+        """
+        client = self.get_client()
+        data = {
+            'grant_type': 'client_credentials',
+            'client_id': client_id or client.client_id,
+            'client_secret': client_secret or client.client_secret,
+        }
+
+        return self.client.post(self.access_token_url(), data)
+
+    def assert_valid_access_token_response(self, access_token, response):
+        """ Verifies the content of the response contains a JSON representation of the access token.
+
+        Note:
+            The access token should NOT have an associated refresh token.
+        """
+        expected = {
+            u'access_token': access_token.token,
+            u'token_type': constants.TOKEN_TYPE,
+            u'expires_in': access_token.get_expire_delta(),
+            u'scope': u' '.join(scope.names(access_token.scope)),
+        }
+
+        self.assertEqual(json.loads(response.content), expected)
+
+    def get_latest_access_token(self):
+        return AccessToken.objects.filter(client=self.get_client()).order_by('-id')[0]
+
+    def test_authorize_success(self):
+        """ Verify the endpoint successfully issues an access token using the client credentials grant. """
+        response = self.request_access_token()
+        self.assertEqual(200, response.status_code, response.content)
+
+        access_token = self.get_latest_access_token()
+        self.assert_valid_access_token_response(access_token, response)
+
+    @ddt.data(
+        {'client_id': 'invalid'},
+        {'client_secret': 'invalid'},
+    )
+    def test_authorize_with_invalid_credentials(self, credentials_override):
+        """ Verify the endpoint returns HTTP 400 if the credentials are invalid. """
+        response = self.request_access_token(**credentials_override)
+        self.assertEqual(400, response.status_code, response.content)
+        self.assertDictEqual(json.loads(response.content), {'error': 'invalid_client'})
+
+
 class AuthBackendTest(BaseOAuth2TestCase):
     fixtures = ['test_oauth2']
 
