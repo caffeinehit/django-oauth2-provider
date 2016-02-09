@@ -106,7 +106,7 @@ class Grant(models.Model):
     class Meta:
         app_label = "oauth2"
 
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, related_name='dop_grant')
     client = models.ForeignKey(Client)
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
@@ -141,7 +141,7 @@ class AccessToken(models.Model):
     class Meta:
         app_label = "oauth2"
 
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, related_name='dop_access_token')
     token = models.CharField(max_length=255, default=long_token, db_index=True)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
@@ -195,7 +195,7 @@ class RefreshToken(models.Model):
     class Meta:
         app_label = "oauth2"
 
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, related_name='dop_refresh_token')
     token = models.CharField(max_length=255, default=long_token)
     access_token = models.OneToOneField(AccessToken,
                                         related_name='refresh_token')
