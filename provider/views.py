@@ -1,7 +1,6 @@
 import json
 import urlparse
-import django
-# from django.http import HttpResponse
+from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
@@ -9,11 +8,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
 from . import constants, scope
 
-def HttpResponse(content, content_type, **kwargs):
-    if '1.7' in django.get_version() or '1.8' in django.get_version():
-        return django.http.HttpResponse(content, content_type=content_type, **kwargs)
-    else:
-        return django.http.HttpResponse(content, mimetype=content_type, **kwargs)
 
 class OAuthError(Exception):
     """
@@ -298,13 +292,13 @@ class Redirect(OAuthView, Mixin):
     an error.
     """
 
-    def error_response(self, error, content_type='application/json', status=400,
+    def error_response(self, error, mimetype='application/json', status=400,
             **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), content_type=content_type,
+        return HttpResponse(json.dumps(error), content_type=mimetype,
                 status=status, **kwargs)
 
     def get(self, request):
@@ -383,8 +377,7 @@ class AccessToken(OAuthView, Mixin):
     Authentication backends used to authenticate a particular client.
     """
 
-    grant_types = ['authorization_code', 'refresh_token', 'password',
-                   'client_credentials']
+    grant_types = ['authorization_code', 'refresh_token', 'password']
     """
     The default grant types supported by this view.
     """
@@ -464,13 +457,13 @@ class AccessToken(OAuthView, Mixin):
         """
         raise NotImplementedError
 
-    def error_response(self, error, content_type='application/json', status=400,
+    def error_response(self, error, mimetype='application/json', status=400,
             **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), content_type=content_type,
+        return HttpResponse(json.dumps(error), content_type=mimetype,
                 status=status, **kwargs)
 
     def access_token_response(self, access_token):
@@ -546,7 +539,7 @@ class AccessToken(OAuthView, Mixin):
         else:
             at = self.create_access_token(request, user, scope, client)
             # Public clients don't get refresh tokens
-            if client.client_type == constants.CONFIDENTIAL:
+            if client.client_type != 1:
                 rt = self.create_refresh_token(request, user, scope, at, client)
 
         return self.access_token_response(at)
