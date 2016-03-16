@@ -14,6 +14,29 @@ customizable OAuth2\-authentication for your Django projects.
 
 `Help <https://groups.google.com/d/forum/django-oauth2-provider>`_
 
+Release Notes
+=============
+
+0.6.0
+-----
+
+This release contains a backward incompatible change:
+
+* Foreign key reverse names have been specified, so this library can be 
+  installed alongside `django-oauth-toolkit`.  Code that traverses from 
+  the User model to `django-oauth2-provider` models will need to update the 
+  related name used.  
+
+      >>> user.access_token
+      >>> user.grant
+      >>> user.refresh_token
+
+  becomes:
+
+      >>> user.dop_access_token
+      >>> user.dop_grant
+      >>> user.dop_refresh_token
+
 License
 =======
 
