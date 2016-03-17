@@ -17,7 +17,7 @@ customizable OAuth2\-authentication for your Django projects.
 Release Notes
 =============
 
-0.6.0
+1.0.0
 -----
 
 This release contains a backward incompatible change:
