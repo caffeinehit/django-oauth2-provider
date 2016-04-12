@@ -597,7 +597,7 @@ class ClientCredentialsAccessTokenTests(BaseOAuth2TestCase):
         super(ClientCredentialsAccessTokenTests, self).setUp()
         AccessToken.objects.all().delete()
 
-    def request_access_token(self, client_id=None, client_secret=None):
+    def request_access_token(self, client_id=None, client_secret=None, scope=None):
         """ Issues an access token request using the client credentials grant.
 
         Arguments:
@@ -613,6 +613,11 @@ class ClientCredentialsAccessTokenTests(BaseOAuth2TestCase):
             'client_id': client_id or client.client_id,
             'client_secret': client_secret or client.client_secret,
         }
+
+        if scope:
+            data.update({
+                'scope': scope,
+            })
 
         return self.client.post(self.access_token_url(), data)
 
@@ -634,9 +639,10 @@ class ClientCredentialsAccessTokenTests(BaseOAuth2TestCase):
     def get_latest_access_token(self):
         return AccessToken.objects.filter(client=self.get_client()).order_by('-id')[0]
 
-    def test_authorize_success(self):
+    @ddt.data(None, 'read')
+    def test_authorize_success(self, scope):
         """ Verify the endpoint successfully issues an access token using the client credentials grant. """
-        response = self.request_access_token()
+        response = self.request_access_token(scope=scope)
         self.assertEqual(200, response.status_code, response.content)
 
         access_token = self.get_latest_access_token()

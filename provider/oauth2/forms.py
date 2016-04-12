@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 
-from provider import constants, scope
+from provider import scope
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
 from provider.forms import OAuthForm, OAuthValidationError
 from provider.oauth2.models import Client, Grant, RefreshToken
@@ -340,10 +340,15 @@ class PublicPasswordGrantForm(PasswordGrantForm):
 
 class ClientCredentialsGrantForm(ScopeMixin, OAuthForm):
     """ Validate a client credentials grant request. """
+    scope = forms.CharField(required=False)
 
-    def clean(self):
-        cleaned_data = super(ClientCredentialsGrantForm, self).clean()
-        # We do not fully support scopes for this grant type; however, a scope is required
-        # in order to create an access token. Default to read-only access.
-        cleaned_data['scope'] = constants.READ
-        return cleaned_data
+    def clean_scope(self):
+        # NOTE (CCB): This is a horrible hack, like much of our OAuth work. The scopes are declared in
+        # edx-oauth2-provider. (See edx_oauth2_provider/constants.py.) However, we need to provide a default scope
+        # that (a) gives the token basic read access and (b) allows access to the user info endpoint. This value
+        # represents the following scopes: openid (1), profile (2), email (4), permissions (32). At present, this is
+        # all scopes except course_staff and course_instructor. These scopes are normally associated with actual
+        # users, whereas the client credentials grant will primarily be used by service users.
+        #
+        # In the future, we should limit the allowable scopes either at a global or per-client level.
+        return 39
