@@ -39,7 +39,7 @@ from ..compat.urls import *
 from .views import Authorize, Redirect, Capture, AccessTokenView
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url('^authorize/?$',
         login_required(Capture.as_view()),
         name='capture'),
@@ -52,4 +52,4 @@ urlpatterns = patterns('',
     url('^access_token/?$',
         csrf_exempt(AccessTokenView.as_view()),
         name='access_token'),
-)
+]

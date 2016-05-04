@@ -1,4 +1,4 @@
-from ..utils import now
+from ..utils import now, MergeDict
 from .forms import ClientAuthForm, PublicPasswordGrantForm
 from .models import AccessToken
 import binascii
@@ -54,7 +54,8 @@ class RequestParamsClientBackend(object):
         if request is None:
             return None
 
-        form = ClientAuthForm(request.REQUEST)
+        request_data = MergeDict(request.GET, request.POST)
+        form = ClientAuthForm(request_data)
 
         if form.is_valid():
             return form.cleaned_data.get('client')
@@ -75,7 +76,8 @@ class PublicPasswordBackend(object):
         if request is None:
             return None
 
-        form = PublicPasswordGrantForm(request.REQUEST)
+        request_data = MergeDict(request.GET, request.POST)
+        form = PublicPasswordGrantForm(request_data)
 
         if form.is_valid():
             return form.cleaned_data.get('client')
@@ -90,7 +92,7 @@ class AccessTokenBackend(object):
 
     def authenticate(self, access_token=None, client=None):
         try:
-            return AccessToken.objects.get(token=access_token,
-                expires__gt=now(), client=client)
+            return AccessToken.objects.get(
+                token=access_token, expires__gt=now(), client=client)
         except AccessToken.DoesNotExist:
             return None

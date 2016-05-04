@@ -3,7 +3,6 @@ import os
 from django import VERSION as DJANGO_VERSION
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('Tester', 'test@example.com'),
@@ -74,3 +73,14 @@ MIDDLEWARE_CLASSES = (
 if DJANGO_VERSION[0] == 1 and DJANGO_VERSION[1] >= 7:
     TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(os.path.dirname(__file__), '../provider/templates/'),
+        ],
+        'OPTIONS': {
+            'debug': True
+        }
+    }
+]

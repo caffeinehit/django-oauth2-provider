@@ -485,10 +485,10 @@ class AuthBackendTest(BaseOAuth2TestCase):
                           "Didn't return none.")
 
     def test_request_params_client_backend(self):
-        request = type('Request', (object,), {'REQUEST': {}})()
+        request = type('Request', (object,), {'GET': {}, 'POST': {}})()
 
-        request.REQUEST['client_id'] = self.get_client().client_id
-        request.REQUEST['client_secret'] = self.get_client().client_secret
+        request.GET['client_id'] = self.get_client().client_id
+        request.POST['client_secret'] = self.get_client().client_secret
 
         self.assertEqual(RequestParamsClientBackend().authenticate(request).id,
                          2, "Didn't return the right client.'")
