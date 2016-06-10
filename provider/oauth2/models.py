@@ -63,7 +63,8 @@ class Client(models.Model):
                     redirect_uri=self.redirect_uri,
                     client_id=self.client_id,
                     client_secret=self.client_secret,
-                    client_type=self.client_type)
+                    client_type=self.client_type,
+                    logout_uri=self.logout_uri)
 
     @classmethod
     def deserialize(cls, data):
