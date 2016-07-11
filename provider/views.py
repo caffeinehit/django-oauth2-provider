@@ -99,7 +99,7 @@ class Capture(OAuthView, Mixin):
 
     The actual implementation is required to override :meth:`get_redirect_url`.
     """
-    template_name = 'provider/authorize.html'
+    template_name = constants.AUTHORIZE_TEMPLATE
 
     def get_redirect_url(self, request):
         """
@@ -150,7 +150,7 @@ class Authorize(OAuthView, Mixin):
     user with a modified redirect URL to the callback including the error
     and possibly description of the error as defined in :rfc:`4.1.2.1`.
     """
-    template_name = 'provider/authorize.html'
+    template_name = constants.AUTHORIZE_TEMPLATE
 
     def get_redirect_url(self, request):
         """
