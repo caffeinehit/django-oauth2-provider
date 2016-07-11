@@ -264,7 +264,9 @@ class Authorize(OAuthView, Mixin):
             return self.render_to_response({
                 'client': client,
                 'form': authorization_form,
-                'oauth_data': data, })
+                'oauth_data': data,
+                'scope_names': scope.to_names(data['scope']),
+            })
 
         code = self.save_authorization(request, client,
             authorization_form, data)
