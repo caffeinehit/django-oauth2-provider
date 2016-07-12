@@ -295,6 +295,9 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
     def clean(self):
         data = self.cleaned_data
 
+        if 'spothero' not in self.client.name.lower():
+            raise OAuthValidationError({'error': 'invalid_client'})
+
         user = authenticate(username=data.get('username'),
             password=data.get('password'))
 
