@@ -93,7 +93,9 @@ class ScopeMixin(object):
         """
         default = SCOPES[2][0] # read+write
 
-        flags = self.cleaned_data.get('scope', [])
+        # OVERRIDE all scope to always be read+write
+        # flags = self.cleaned_data.get('scope', [])
+        flags = ['read', 'write', 'read+write']
 
         return scope.to_int(default=default, *flags)
 
