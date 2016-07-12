@@ -452,7 +452,7 @@ class AccessToken(OAuthView, Mixin):
         return HttpResponse(
             json.dumps({
                 'access_token': access_token.token,
-                'expires_in': access_token.get_expire_delta(),
+                'expires_at': access_token.expires_text,
                 'refresh_token': access_token.refresh_token.token,
                 'scope': ' '.join(scope.names(access_token.scope)),
             }), content_type='application/json'

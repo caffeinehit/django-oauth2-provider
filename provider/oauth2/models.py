@@ -128,6 +128,10 @@ class AccessToken(models.Model):
         timedelta = expiration - reference
         return timedelta.days*86400 + timedelta.seconds
 
+    @property
+    def expires_text(self):
+        return self.expires.astimezone(timezone.utc).strftime('%Y-%d-%mT%H:%M:%SZ')
+
 
 class RefreshToken(models.Model):
     """
