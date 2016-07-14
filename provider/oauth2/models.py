@@ -130,7 +130,7 @@ class AccessToken(models.Model):
 
     @property
     def expires_text(self):
-        return self.expires.astimezone(timezone.utc).strftime('%Y-%d-%mT%H:%M:%SZ')
+        return self.expires.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 class RefreshToken(models.Model):
