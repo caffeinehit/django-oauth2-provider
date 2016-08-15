@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from . import constants, scope
+from .throttling import Throttle
 
 
 class OAuthError(Exception):
@@ -36,6 +37,12 @@ class OAuthView(TemplateView):
     """
 
     def dispatch(self, request, *args, **kwargs):
+        throttle = Throttle()
+        if not throttle.allow_request(request, self):
+            msg = 'Request was throttled. Expected available in {} second.'.format(throttle.wait)
+            error = {'error': msg}
+            return HttpResponse(json.dumps(error), content_type='application/json', status=429)
+
         response = super(OAuthView, self).dispatch(request, *args, **kwargs)
         response['Cache-Control'] = 'no-store'
         response['Pragma'] = 'no-cache'

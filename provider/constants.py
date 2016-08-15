@@ -35,3 +35,5 @@ SESSION_KEY = getattr(settings, 'OAUTH_SESSION_KEY', 'oauth')
 SINGLE_ACCESS_TOKEN = getattr(settings, 'OAUTH_SINGLE_ACCESS_TOKEN', False)
 
 AUTHORIZE_TEMPLATE = getattr(settings, 'OAUTH_AUTHORIZE_TEMPLATE', 'provider/authorize.html')
+
+OAUTH2_THROTTLE_RATE = getattr(settings, 'OAUTH2_THROTTLE_RATE', None)
