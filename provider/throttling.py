@@ -3,6 +3,10 @@ from __future__ import unicode_literals
 import time
 
 from django.core.cache import cache
+try:
+    from constance import config
+except ImportError:
+    config = None
 
 from . import constants
 
@@ -13,7 +17,7 @@ class Throttle(object):
     https://github.com/tomchristie/django-rest-framework/blob/master/rest_framework/throttling.py#L53
     """
     def __init__(self):
-        self.rate = constants.OAUTH2_THROTTLE_RATE
+        self.rate = getattr(config, 'OAUTH2_THROTTLE_RATE', None)
         self.num_requests, self.duration = self.parse_rate(self.rate)
 
     def get_ident(self, request):
