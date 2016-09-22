@@ -118,11 +118,12 @@ class AccessTokenView(AccessTokenView):
         )
 
     def invalidate_grant(self, grant):
-        if constants.DELETE_EXPIRED:
-            grant.delete()
-        else:
-            grant.expires = now() - timedelta(days=1)
-            grant.save()
+        if not constants.LONG_LIVE_GRANT:
+          if constants.DELETE_EXPIRED:
+              grant.delete()
+          else:
+              grant.expires = now() - timedelta(days=1)
+              grant.save()
 
     def invalidate_refresh_token(self, rt):
         if constants.DELETE_EXPIRED:

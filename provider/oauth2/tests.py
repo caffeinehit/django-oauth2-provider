@@ -326,6 +326,24 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual(400, response.status_code)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
 
+    def test_fetching_access_token_multiple_times_with_long_live_grant(self):
+        constants.LONG_LIVE_GRANT = True
+
+        token = self._login_authorize_get_token()
+        code = self.get_grant().code
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(token['access_token'], json.loads(response.content)['access_token'])
+        self.assertNotEqual(token['refresh_token'], json.loads(response.content)['refresh_token'])
+
+        constants.LONG_LIVE_GRANT = False
+
     def test_escalating_the_scope(self):
         self.login()
         self._login_and_authorize()
