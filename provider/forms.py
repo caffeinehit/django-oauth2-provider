@@ -40,6 +40,7 @@ class OAuthForm(forms.Form):
     The different types of errors are outlined in :rfc:`4.2.2.1` and
     :rfc:`5.2`.
     """
+
     def __init__(self, *args, **kwargs):
         self.client = kwargs.pop('client', None)
         super(OAuthForm, self).__init__(*args, **kwargs)

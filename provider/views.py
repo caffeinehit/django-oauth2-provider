@@ -1,12 +1,16 @@
 import json
+import urllib
 import urlparse
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
+from django.utils.http import urlencode
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
-from django.core.exceptions import ObjectDoesNotExist
+
 from oauth2.models import Client
-from . import constants, scope
+from provider import constants, scope
 
 
 class OAuthError(Exception):
@@ -29,6 +33,97 @@ class OAuthError(Exception):
 
     """
 
+class AccessTokenMixin(object):
+    """
+    Mixin providing methods used during access token handling and presentation.
+
+    These methods may be used by both Authorization and Access Token endpoints.
+    """
+
+    def get_access_token(self, request, user, scope, client):
+        """
+        Override to handle fetching of an existing access token.
+
+        :return: ``object`` - Access token
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def create_access_token(self, request, user, scope, client):
+        """
+        Override to handle access token creation.
+
+        :return: ``object`` - Access token
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def create_refresh_token(self, request, user, scope, access_token, client):
+        """
+        Override to handle refresh token creation.
+
+        :return: ``object`` - Refresh token
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def invalidate_refresh_token(self, refresh_token):
+        """
+        Override to handle refresh token invalidation. When requesting a new
+        access token from a refresh token, the old one is *always* invalidated.
+
+        :return None:
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def invalidate_access_token(self, access_token):
+        """
+        Override to handle access token invalidation. When a new access token
+        is created from a refresh token, the old one is *always* invalidated.
+
+        :return None:
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def access_token_response_data(self, access_token, response_type=None):
+        """
+        Returns access token data as defined in :rfc:`5.1`.
+
+        Derived classes can override to add extra parameters.
+        """
+        response_data = {
+            'access_token': access_token.token,
+            'token_type': constants.TOKEN_TYPE,
+            'expires_in': access_token.get_expire_delta(),
+            'scope': ' '.join(scope.names(access_token.scope)),
+        }
+
+        # Not all access_tokens are given a refresh_token
+        # (for example, public clients doing password auth)
+        try:
+            rt = access_token.refresh_token
+            response_data['refresh_token'] = rt.token
+        except ObjectDoesNotExist:
+            pass
+
+        return response_data
+
+    def get_access_and_refresh_tokens(self, request, user, scope, client, reuse_existing_access_token=False, create_refresh_token=True):
+        """
+        Returns an AccessToken and RefreshToken for the given user, scope, and client combination.
+
+        Returns:
+            (AccessToken, RefreshToken)
+            If create_refresh_token is False, the second element of the tuple will be None.
+        """
+        if reuse_existing_access_token:
+            at = self.get_access_token(request, user, scope, client)
+        else:
+            at = self.create_access_token(request, user, scope, client)
+
+        rt = None
+        if create_refresh_token and not reuse_existing_access_token:
+            rt = self.create_refresh_token(request, user, scope, at, client)
+
+        return at, rt
+
 
 class OAuthView(TemplateView):
     """
@@ -49,6 +144,7 @@ class Mixin(object):
     Mixin providing common methods required in the OAuth view defined in
     :attr:`provider.views`.
     """
+
     def get_data(self, request, key='params'):
         """
         Return stored data from the session store.
@@ -72,7 +168,8 @@ class Mixin(object):
         Clear all OAuth related data from the session store.
         """
         for key in request.session.keys():
-            if key.startswith(constants.SESSION_KEY):
+            session_key = constants.SESSION_KEY
+            if isinstance(key, basestring) and key.startswith(session_key):
                 del request.session[key]
 
     def authenticate(self, request):
@@ -111,15 +208,18 @@ class Capture(OAuthView, Mixin):
         :return: :class:`django.http.HttpResponseRedirect`
 
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def handle(self, request, data):
         self.cache_data(request, data)
 
         if constants.ENFORCE_SECURE and not request.is_secure():
-            return self.render_to_response({'error': 'access_denied',
-                'error_description': _("A secure connection is required."),
-                'next': None},
+            return self.render_to_response(
+                {
+                    'error': 'access_denied',
+                    'error_description': _("A secure connection is required."),
+                    'next': None
+                },
                 status=400)
 
         return HttpResponseRedirect(self.get_redirect_url(request))
@@ -131,7 +231,7 @@ class Capture(OAuthView, Mixin):
         return self.handle(request, request.POST)
 
 
-class Authorize(OAuthView, Mixin):
+class Authorize(OAuthView, Mixin, AccessTokenMixin):
     """
     View to handle the client authorization as outlined in :rfc:`4`.
     Implementation must override a set of methods:
@@ -159,7 +259,7 @@ class Authorize(OAuthView, Mixin):
         :return: ``str`` - The client URL to display in the template after
             authorization succeeded or failed.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_request_form(self, client, data):
         """
@@ -167,7 +267,7 @@ class Authorize(OAuthView, Mixin):
         by the :class:`Capture` view.
         The form must accept a keyword argument ``client``.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_authorization_form(self, request, client, data, client_data):
         """
@@ -176,7 +276,7 @@ class Authorize(OAuthView, Mixin):
 
         :return: :attr:`django.forms.Form`
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_client(self, client_id):
         """
@@ -184,7 +284,7 @@ class Authorize(OAuthView, Mixin):
         if no client is found. An error will be displayed to the resource owner
         and presented to the client upon the final redirect.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def save_authorization(self, request, client, form, client_data):
         """
@@ -197,7 +297,7 @@ class Authorize(OAuthView, Mixin):
 
         :return: ``None``, ``str``
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def _validate_client(self, request, data):
         """
@@ -208,8 +308,7 @@ class Authorize(OAuthView, Mixin):
         if client is None:
             raise OAuthError({
                 'error': 'unauthorized_client',
-                'error_description': _("An unauthorized client tried to access"
-                    " your resources.")
+                'error_description': _("An unauthorized client tried to access your resources.")
             })
 
         form = self.get_request_form(client, data)
@@ -245,7 +344,35 @@ class Authorize(OAuthView, Mixin):
 
         return self.render_to_response(ctx, **kwargs)
 
+    def get_implicit_response(self, request, client):
+        """
+        Assumes validated and authorized request with a response_type that is
+        associated with an implicit flow.
+        """
+        data = self.get_data(request)
+
+        lookup_kwargs = {
+            'user': request.user,
+            'client': client,
+            'scope': scope.to_int(*data.get('scope', constants.SCOPES[0][1]).split()),
+            'reuse_existing_access_token': constants.SINGLE_ACCESS_TOKEN,
+            'create_refresh_token': False
+        }
+
+        token, __ = self.get_access_and_refresh_tokens(request, **lookup_kwargs)
+
+        response_data = self.access_token_response_data(token, data['response_type'])
+
+        basepath = data.get("redirect_uri")
+        if not basepath:
+            basepath = token.client.redirect_uri
+        if len(data.get('state', '')) > 0:
+            response_data['state'] = data.get('state')
+        path = "{0}#{1}".format(basepath, urlencode(response_data))
+        return HttpResponseRedirect(path)
+
     def handle(self, request, post_data=None):
+
         data = self.get_data(request)
 
         if data is None:
@@ -258,17 +385,35 @@ class Authorize(OAuthView, Mixin):
         except OAuthError, e:
             return self.error_response(request, e.args[0], status=400)
 
-        authorization_form = self.get_authorization_form(request, client,
-            post_data, data)
+        authorization_form = self.get_authorization_form(request, client, post_data, data)
 
-        if not authorization_form.is_bound or not authorization_form.is_valid():
+        if not (authorization_form.is_bound and authorization_form.is_valid()):
             return self.render_to_response({
                 'client': client,
                 'form': authorization_form,
-                'oauth_data': data, })
+                'oauth_data': data,
+            })
 
-        code = self.save_authorization(request, client,
-            authorization_form, data)
+        if not authorization_form.cleaned_data['authorize']:
+            # User hit cancel.
+            response_data = {
+                "error": "access_denied",
+                "error_description": "The user denied the scope request.",
+                "state": data.get('state'),
+            }
+
+            url = "{0}?{1}".format(
+                client.redirect_uri, urllib.urlencode(response_data))
+
+            return HttpResponseRedirect(url)
+
+        if 'token' in data['response_type']:
+            try:
+                return self.get_implicit_response(request, client)
+            except OAuthError, e:
+                return self.error_response(request, e.args[0], status=400)
+
+        code = self.save_authorization(request, client, authorization_form, data)
 
         # be sure to serialize any objects that aren't natively json
         # serializable because these values are stored as session data
@@ -292,14 +437,13 @@ class Redirect(OAuthView, Mixin):
     an error.
     """
 
-    def error_response(self, error, mimetype='application/json', status=400,
-            **kwargs):
+    def error_response(self, error, status=400, **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        kwargs.setdefault('content_type', 'application/json')
+        return HttpResponse(json.dumps(error), status=status, **kwargs)
 
     def get(self, request):
         data = self.get_data(request)
@@ -343,7 +487,7 @@ class Redirect(OAuthView, Mixin):
         return HttpResponseRedirect(redirect_uri)
 
 
-class AccessToken(OAuthView, Mixin):
+class AccessToken(OAuthView, Mixin, AccessTokenMixin):
     """
     :attr:`AccessToken` handles creation and refreshing of access tokens.
 
@@ -377,7 +521,7 @@ class AccessToken(OAuthView, Mixin):
     Authentication backends used to authenticate a particular client.
     """
 
-    grant_types = ['authorization_code', 'refresh_token', 'password']
+    grant_types = ['authorization_code', 'refresh_token', 'password', 'client_credentials']
     """
     The default grant types supported by this view.
     """
@@ -388,7 +532,7 @@ class AccessToken(OAuthView, Mixin):
 
         :return: ``tuple`` - ``(True or False, grant or error_dict)``
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_refresh_token_grant(self, request, data, client):
         """
@@ -396,7 +540,7 @@ class AccessToken(OAuthView, Mixin):
 
         :return: ``tuple`` - ``(True or False, token or error_dict)``
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def get_password_grant(self, request, data, client):
         """
@@ -404,31 +548,15 @@ class AccessToken(OAuthView, Mixin):
 
         :return: ``tuple`` - ``(True or False, user or error_dict)``
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
-    def get_access_token(self, request, user, scope, client):
+    def get_client_credentials_grant(self, request, data, client):
         """
-        Override to handle fetching of an existing access token.
+        Return the optional parameters (scope) associated with this request.
 
-        :return: ``object`` - Access token
+        :return: ``tuple`` - ``(True or False, options)``
         """
-        raise NotImplementedError
-
-    def create_access_token(self, request, user, scope, client):
-        """
-        Override to handle access token creation.
-
-        :return: ``object`` - Access token
-        """
-        raise NotImplementedError
-
-    def create_refresh_token(self, request, user, scope, access_token, client):
-        """
-        Override to handle refresh token creation.
-
-        :return: ``object`` - Refresh token
-        """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def invalidate_grant(self, grant):
         """
@@ -437,58 +565,24 @@ class AccessToken(OAuthView, Mixin):
 
         :return None:
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
-    def invalidate_refresh_token(self, refresh_token):
-        """
-        Override to handle refresh token invalidation. When requesting a new
-        access token from a refresh token, the old one is *always* invalidated.
-
-        :return None:
-        """
-        raise NotImplementedError
-
-    def invalidate_access_token(self, access_token):
-        """
-        Override to handle access token invalidation. When a new access token
-        is created from a refresh token, the old one is *always* invalidated.
-
-        :return None:
-        """
-        raise NotImplementedError
-
-    def error_response(self, error, mimetype='application/json', status=400,
-            **kwargs):
+    def error_response(self, error, status=400, **kwargs):
         """
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), mimetype=mimetype,
-                status=status, **kwargs)
+        kwargs.setdefault('content_type', 'application/json')
+        return HttpResponse(json.dumps(error), status=status, **kwargs)
 
-    def access_token_response(self, access_token):
+    def access_token_response(self, access_token, data=None):
         """
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
         """
-
-        response_data = {
-            'access_token': access_token.token,
-            'token_type': constants.TOKEN_TYPE,
-            'expires_in': access_token.get_expire_delta(),
-            'scope': ' '.join(scope.names(access_token.scope)),
-        }
-
-        # Not all access_tokens are given a refresh_token
-        # (for example, public clients doing password auth)
-        try:
-            rt = access_token.refresh_token
-            response_data['refresh_token'] = rt.token
-        except ObjectDoesNotExist:
-            pass
-
+        response_data = self.access_token_response_data(access_token)
         return HttpResponse(
-            json.dumps(response_data), mimetype='application/json'
+            json.dumps(response_data), content_type='application/json'
         )
 
     def authorization_code(self, request, data, client):
@@ -496,14 +590,16 @@ class AccessToken(OAuthView, Mixin):
         Handle ``grant_type=authorization_code`` requests as defined in
         :rfc:`4.1.3`.
         """
-        grant = self.get_authorization_code_grant(request, request.POST,
-                client)
-        if constants.SINGLE_ACCESS_TOKEN:
-            at = self.get_access_token(request, grant.user, grant.scope, client)
-        else:
-            at = self.create_access_token(request, grant.user, grant.scope, client)
-            rt = self.create_refresh_token(request, grant.user, grant.scope, at,
-                    client)
+        grant = self.get_authorization_code_grant(request, request.POST, client)
+
+        kwargs = {
+            'request': request,
+            'user': grant.user,
+            'scope': grant.scope,
+            'client': client,
+            'reuse_existing_access_token': constants.SINGLE_ACCESS_TOKEN,
+        }
+        at, rt = self.get_access_and_refresh_tokens(**kwargs)
 
         self.invalidate_grant(grant)
 
@@ -519,9 +615,13 @@ class AccessToken(OAuthView, Mixin):
         self.invalidate_refresh_token(rt)
         self.invalidate_access_token(rt.access_token)
 
-        at = self.create_access_token(request, rt.user, rt.access_token.scope,
-                client)
-        rt = self.create_refresh_token(request, at.user, at.scope, at, client)
+        kwargs = {
+            'request': request,
+            'user': rt.user,
+            'scope': rt.access_token.scope,
+            'client': client,
+        }
+        at, rt = self.get_access_and_refresh_tokens(**kwargs)
 
         return self.access_token_response(at)
 
@@ -531,16 +631,32 @@ class AccessToken(OAuthView, Mixin):
         """
 
         data = self.get_password_grant(request, data, client)
-        user = data.get('user')
-        scope = data.get('scope')
+        kwargs = {
+            'request': request,
+            'user': data.get('user'),
+            'scope': data.get('scope'),
+            'client': client,
+            'reuse_existing_access_token': constants.SINGLE_ACCESS_TOKEN,
 
-        if constants.SINGLE_ACCESS_TOKEN:
-            at = self.get_access_token(request, user, scope, client)
-        else:
-            at = self.create_access_token(request, user, scope, client)
             # Public clients don't get refresh tokens
-            if client.client_type != 1:
-                rt = self.create_refresh_token(request, user, scope, at, client)
+            'create_refresh_token': client.client_type == constants.CONFIDENTIAL
+        }
+        at, rt = self.get_access_and_refresh_tokens(**kwargs)
+
+        return self.access_token_response(at)
+
+    def client_credentials(self, request, data, client):
+        """ Handle ``grant_type=client_credentials`` requests as defined in :rfc:`4.4`. """
+        data = self.get_client_credentials_grant(request, data, client)
+        kwargs = {
+            'request': request,
+            'user': client.user,
+            'scope': data.get('scope'),
+            'client': client,
+            'reuse_existing_access_token': constants.SINGLE_ACCESS_TOKEN,
+            'create_refresh_token': False,
+        }
+        at, rt = self.get_access_and_refresh_tokens(**kwargs)
 
         return self.access_token_response(at)
 
@@ -556,6 +672,8 @@ class AccessToken(OAuthView, Mixin):
             return self.refresh_token
         elif grant_type == 'password':
             return self.password
+        elif grant_type == 'client_credentials':
+            return self.client_credentials
         return None
 
     def get(self, request):
@@ -579,8 +697,7 @@ class AccessToken(OAuthView, Mixin):
         if not 'grant_type' in request.POST:
             return self.error_response({
                 'error': 'invalid_request',
-                'error_description': _("No 'grant_type' included in the "
-                    "request.")})
+                'error_description': _("No 'grant_type' included in the request.")})
 
         grant_type = request.POST['grant_type']
 

@@ -6,3 +6,7 @@ _build
 dist
 build
 venv
+*.sqlite
+.coverage
+.idea/
+htmlcov/

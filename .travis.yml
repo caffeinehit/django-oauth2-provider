@@ -1,14 +1,28 @@
+sudo: false
 language: python
-env:
-  - DJANGO="django>=1.4,<1.5"
-  - DJANGO="django>=1.5,<1.6"
-  - DJANGO="django>=1.6,<1.7"
 python:
-  - "2.6"
   - "2.7"
-# command to install dependencies
+
+addons:
+  apt:
+    packages:
+      - lcov
+
 install:
-    - pip install -q -r requirements.txt --use-mirrors
-    - pip install -q $DJANGO --use-mirrors -U
-    - python setup.py develop
-script: ./test.sh
+  - pip install -U pip wheel codecov
+  - make requirements
+
+script:
+  - make test
+
+after_success:
+  - codecov
+
+deploy:
+  provider: pypi
+  user: edx
+  password:
+    secure: vIuWvQ5MgvA4fWAugRTTDbRqFQlKwtt2VEVK6XJNPDwtqq956TJ1qll6jtECv90hBO/dXpbj+151P2fgWD5d6OuHagD4lXaZ9sBziClBXbaowjeGH6xG3xScvo7+oJ+2vVh/xNk4Pqv2YdbOBTbP79vRW/3rrfFnjPpd4K2Ipvs=
+  distributions: sdist bdist_wheel
+  on:
+    tags: true

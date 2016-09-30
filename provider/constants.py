@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from django.conf import settings
 
 CONFIDENTIAL = 0
@@ -17,6 +18,7 @@ READ = 1 << 1
 WRITE = 1 << 2
 READ_WRITE = READ | WRITE
 
+# NOTE that DEFAULT_SCOPES[0] (i.e. READ / 'read') is the default OAuth2 scope, per section 3.3 of rfc6749.
 DEFAULT_SCOPES = (
     (READ, 'read'),
     (WRITE, 'write'),

@@ -1,30 +1,19 @@
 import hashlib
+import json
+
 import shortuuid
-from datetime import datetime, tzinfo
 from django.conf import settings
-from django.utils import dateparse
-from django.db.models.fields import (DateTimeField, DateField,
-                                     EmailField, TimeField,
-                                     FieldDoesNotExist)
 from django.core.serializers.json import DjangoJSONEncoder
-from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
+from django.db.models.fields import (DateTimeField, DateField,
+                                     TimeField,
+                                     FieldDoesNotExist)
+from django.utils import dateparse, timezone
 
-try:
-    import json
-except ImporError:
-    import simplejson as json
+from provider.constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
 
-try:
-    from django.utils import timezone
-except ImportError:
-    timezone = None
 
 def now():
-    if timezone:
-        return timezone.now()
-    else:
-        # Django 1.3 compatibility
-        return datetime.now()
+    return timezone.now()
 
 
 def short_token():
@@ -77,7 +66,7 @@ def serialize_instance(instance):
     """
     ret = dict([(k, v)
                 for k, v in instance.__dict__.items()
-                if not k.startswith('_')])
+                if not k.startswith('_')]) if instance else None
     return json.loads(json.dumps(ret, cls=DjangoJSONEncoder))
 
 

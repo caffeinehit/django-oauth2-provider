@@ -2,10 +2,12 @@
 Test cases for functionality provided by the provider.utils module
 """
 
-from datetime import datetime, time, date
-from django.test import TestCase
+from datetime import datetime, date
+
 from django.db import models
-from .. import utils
+from django.test import TestCase
+
+from provider import utils
 
 
 class UtilsTestCase(TestCase):
@@ -14,6 +16,7 @@ class UtilsTestCase(TestCase):
             dt = models.DateTimeField()
             t = models.TimeField()
             d = models.DateField()
+
         instance = SomeModel(dt=datetime.now(),
                              d=date.today(),
                              t=datetime.now().time())
@@ -31,5 +34,20 @@ class UtilsTestCase(TestCase):
             # AssertionError:
             #   datetime.time(10, 6, 28, 705776) !=
             #   datetime.time(10, 6, 28, 705000)
-            self.assertEqual(int(t1.microsecond/1000),
-                             int(t2.microsecond/1000))
+            self.assertEqual(int(t1.microsecond / 1000),
+                             int(t2.microsecond / 1000))
+
+    def test_none_child_(self):
+        class ChildModel(models.Model):
+            pass
+
+        class ParentModel(models.Model):
+            child = models.ForeignKey(ChildModel, null=True)
+
+        reference = ParentModel()
+
+        data = utils.serialize_instance(reference)
+        self.assertEqual(data['child_id'], None)
+
+        instance = utils.deserialize_instance(ParentModel, data)
+        self.assertEqual(instance.child, None)

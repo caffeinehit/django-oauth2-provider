@@ -1,0 +1,10 @@
+[run]
+data_file = .coverage
+omit =
+    docs/*
+    *wsgi.py
+    *migrations*
+    *admin.py
+    *test*
+    *static*
+    *templates*
