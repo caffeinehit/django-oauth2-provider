@@ -531,14 +531,12 @@ class GrantTest(BaseOAuth2TestCase):
     def test_grant_get_requires_login(self):
         response = self.client.get(self.grant_url())
 
-        self.assertEqual(302, response.status_code, response.content)
-        self.assertTrue(self.grant_url() in response['Location'])
+        self.assertEqual(401, response.status_code, response.content)
 
     def test_grant_post_requires_login(self):
         response = self.client.post(self.grant_url())
 
-        self.assertEqual(302, response.status_code, response.content)
-        self.assertTrue(self.grant_url() in response['Location'])
+        self.assertEqual(401, response.status_code, response.content)
 
     def test_grant_get(self):
         token = self._login_authorize_get_token()['access_token']

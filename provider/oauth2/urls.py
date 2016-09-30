@@ -52,7 +52,5 @@ urlpatterns = patterns('',
     url('^access_token/?$',
         csrf_exempt(AccessTokenView.as_view()),
         name='access_token'),
-    url('^grant/?$',
-        login_required(Grant.as_view()),
-        name='grant'),
+    url('^grant/?$', Grant.as_view(), name='grant'),
 )

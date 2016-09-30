@@ -365,6 +365,16 @@ class Grant(OAuthView, Mixin):
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
 
+        if not request.user.is_authenticated():
+            response_data = { 
+                'error': 'non_authenticated'
+            }
+            return HttpResponse(
+                json.dumps(response_data),
+                status=401,
+                mimetype='application/json',
+            )
+
         if not 'client_id' in request.POST:
             return self.error_response({
                 'error': 'invalid_request',
@@ -402,6 +412,16 @@ class Grant(OAuthView, Mixin):
             return self.error_response({
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
+
+        if not request.user.is_authenticated():
+            response_data = { 
+                'error': 'non_authenticated'
+            }
+            return HttpResponse(
+                json.dumps(response_data),
+                status=401,
+                mimetype='application/json',
+            )
 
         grants = self.list_grants(request.user)
 

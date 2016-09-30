@@ -73,7 +73,7 @@ class GrantView(GrantView):
         scope = 2
         try:
             # Attempt to fetch an existing access token.
-            g = Grant.objects.get(user=user, client=client, expires__gt=now())
+            g = Grant.objects.get(user_id=user.id, client=client, expires__gt=now())
         except Grant.DoesNotExist:
             # None found... make a new one!
             g = self.create_grant(user, scope, client)
@@ -89,7 +89,7 @@ class GrantView(GrantView):
 
     def list_grants(self, user):
         try:
-          valid = Grant.objects.filter(user=user, expires__gt=now())
+          valid = Grant.objects.filter(user=user.id, expires__gt=now())
 
           if len(valid) == 0:
             return None
