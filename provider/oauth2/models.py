@@ -106,6 +106,7 @@ class Grant(models.Model):
 
     class Meta:
         app_label = "oauth2"
+        index_together = ["client", "code", "expires"]
 
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='dop_grant')
     client = models.ForeignKey(Client)
