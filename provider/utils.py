@@ -67,6 +67,10 @@ def get_code_expiry():
     return now() + EXPIRE_CODE_DELTA
 
 
+def get_expires_in(dt):
+  return (now() - dt).total_seconds()
+
+
 def serialize_instance(instance):
     """
     Since Django 1.6 items added to the session are no longer pickled,

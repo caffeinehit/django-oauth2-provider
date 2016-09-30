@@ -16,7 +16,6 @@ from .models import Client, Grant, AccessToken, RefreshToken
 from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
 
-
 @skipIfCustomUser
 class BaseOAuth2TestCase(TestCase):
     def login(self):
@@ -33,6 +32,9 @@ class BaseOAuth2TestCase(TestCase):
 
     def access_token_url(self):
         return reverse('oauth2:access_token')
+
+    def grant_url(self):
+        return reverse('oauth2:grant')
 
     def get_client(self):
         return Client.objects.get(id=2)
@@ -56,6 +58,32 @@ class BaseOAuth2TestCase(TestCase):
         response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0][1]})
         self.assertEqual(302, response.status_code, response.content)
         self.assertTrue(self.redirect_url() in response['Location'])
+
+    def _login_authorize_get_token(self):
+        required_props = ['access_token', 'token_type']
+
+        self.login()
+        self._login_and_authorize()
+
+        response = self.client.get(self.redirect_url())
+        query = QueryDict(urlparse.urlparse(response['Location']).query)
+        code = query['code']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+            'code': code})
+
+        self.assertEqual(200, response.status_code, response.content)
+
+        token = json.loads(response.content)
+
+        for prop in required_props:
+            self.assertIn(prop, token, "Access token response missing "
+                    "required property: %s" % prop)
+
+        return token
 
 
 class AuthorizationTest(BaseOAuth2TestCase):
@@ -237,32 +265,6 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code, response.content)
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
-
-    def _login_authorize_get_token(self):
-        required_props = ['access_token', 'token_type']
-
-        self.login()
-        self._login_and_authorize()
-
-        response = self.client.get(self.redirect_url())
-        query = QueryDict(urlparse.urlparse(response['Location']).query)
-        code = query['code']
-
-        response = self.client.post(self.access_token_url(), {
-            'grant_type': 'authorization_code',
-            'client_id': self.get_client().client_id,
-            'client_secret': self.get_client().client_secret,
-            'code': code})
-
-        self.assertEqual(200, response.status_code, response.content)
-
-        token = json.loads(response.content)
-
-        for prop in required_props:
-            self.assertIn(prop, token, "Access token response missing "
-                    "required property: %s" % prop)
-
-        return token
 
     def test_fetching_access_token_with_valid_grant(self):
         self._login_authorize_get_token()
@@ -521,6 +523,62 @@ class EnforceSecureTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertTrue("A secure connection is required." in response.content)
+
+
+class GrantTest(BaseOAuth2TestCase):
+    fixtures = ['test_oauth2.json']
+
+    def test_grant_get_requires_login(self):
+        response = self.client.get(self.grant_url())
+
+        self.assertEqual(302, response.status_code, response.content)
+        self.assertTrue(self.grant_url() in response['Location'])
+
+    def test_grant_post_requires_login(self):
+        response = self.client.post(self.grant_url())
+
+        self.assertEqual(302, response.status_code, response.content)
+        self.assertTrue(self.grant_url() in response['Location'])
+
+    def test_grant_get(self):
+        token = self._login_authorize_get_token()['access_token']
+
+        response = self.client.get(self.grant_url() + '?access_token=%s' % token)
+        self.assertEqual(204, response.status_code, response.content)
+
+    def test_grant_post_missing_client_id(self):
+        token = self._login_authorize_get_token()['access_token']
+
+        response = self.client.post(self.grant_url() + '?access_token=%s' % token)
+        self.assertEqual(400, response.status_code, response.content)
+
+        body = json.loads(response.content)
+        self.assertEqual('invalid_request', body['error'])
+        self.assertEqual('No \'client_id\' included in the request.', body['error_description'])
+
+    def test_grant_create_grant(self):
+        token = self._login_authorize_get_token()['access_token']
+
+        response1 = self.client.post(self.grant_url() + '?access_token=%s' % token, {
+          'client_id': self.get_client().client_id,
+        })
+
+        self.assertEqual(200, response1.status_code, response1.content)
+
+        body1 = json.loads(response1.content)
+        self.assertEqual('read', body1['scope'])
+        self.assertEqual(self.get_client().client_id, body1['client_id'])
+
+        response2 = self.client.post(self.grant_url() + '?access_token=%s' % token, {
+          'client_id': self.get_client().client_id,
+        })
+
+        self.assertEqual(200, response2.status_code, response2.content)
+
+        body2 = json.loads(response2.content)
+        self.assertEqual('read', body2['scope'])
+        self.assertEqual(body1['code'], body2['code'])
+
 
 
 class ClientFormTest(TestCase):
