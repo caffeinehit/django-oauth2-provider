@@ -542,7 +542,8 @@ class GrantTest(BaseOAuth2TestCase):
         token = self._login_authorize_get_token()['access_token']
 
         response = self.client.get(self.grant_url() + '?access_token=%s' % token)
-        self.assertEqual(204, response.status_code, response.content)
+        self.assertEqual(200, response.status_code, response.content)
+        self.assertEqual([], json.loads(response.content))
 
     def test_grant_post_missing_client_id(self):
         token = self._login_authorize_get_token()['access_token']

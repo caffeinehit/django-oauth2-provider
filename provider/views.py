@@ -444,18 +444,16 @@ class Grant(OAuthView, Mixin):
             )
 
         grants = self.list_grants(user)
-
-        if grants is None:
-          return HttpResponse(status=204)
-
         response_data = []
-        for grant in grants:
-          response_data.append({
-            'code': grant['code'],
-            'client_id': grant['client_id'],
-            'expires_in': utils.get_expires_in(grant['expires']),
-            'scope': ' '.join(scope.names(grant['scope'])),
-          })
+
+        if grants is not None:
+          for grant in grants:
+            response_data.append({
+              'code': grant['code'],
+              'client_id': grant['client_id'],
+              'expires_in': utils.get_expires_in(grant['expires']),
+              'scope': ' '.join(scope.names(grant['scope'])),
+            })
 
         return HttpResponse(
             json.dumps(response_data), mimetype='application/json'
