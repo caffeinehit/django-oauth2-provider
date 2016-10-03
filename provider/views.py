@@ -351,6 +351,9 @@ class Grant(OAuthView, Mixin):
     def get_client(self, client_id):
         raise NotImplementedError
 
+    def authenticate(self, access_token, client):
+        raise NotImplementedError
+
     def error_response(self, error, mimetype='application/json', status=400,
             **kwargs):
         """
@@ -359,13 +362,29 @@ class Grant(OAuthView, Mixin):
         return HttpResponse(json.dumps(error), mimetype=mimetype,
                 status=status, **kwargs)
 
+    def get_authenticated_user(self, request):
+        key = request.GET.get('access_token')
+        if not key:
+            auth_header_value = request.META.get('HTTP_AUTHORIZATION')
+            if auth_header_value:
+                key = auth_header_value.split(' ')[1]
+        if not key:
+            return None
+
+        authenticated = self.authenticate(access_token=key, client=None)
+        if authenticated is None:
+            return None
+
+        return authenticated.user;
+
     def post(self, request):
         if constants.ENFORCE_SECURE and not request.is_secure():
             return self.error_response({
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
 
-        if not request.user.is_authenticated():
+        user = self.get_authenticated_user(request)
+        if user is None:
             response_data = { 
                 'error': 'non_authenticated'
             }
@@ -389,7 +408,7 @@ class Grant(OAuthView, Mixin):
                 'error_description': _("Invalid client_id in the "
                   "request.")})
 
-        grant = self.get_grant(request.user, client)
+        grant = self.get_grant(user, client)
         if grant is None:
             return self.error_response({
                 'error': 'invalid_request',
@@ -413,7 +432,8 @@ class Grant(OAuthView, Mixin):
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
 
-        if not request.user.is_authenticated():
+        user = self.get_authenticated_user(request)
+        if user is None:
             response_data = { 
                 'error': 'non_authenticated'
             }
@@ -423,7 +443,7 @@ class Grant(OAuthView, Mixin):
                 mimetype='application/json',
             )
 
-        grants = self.list_grants(request.user)
+        grants = self.list_grants(user)
 
         if grants is None:
           return HttpResponse(status=204)

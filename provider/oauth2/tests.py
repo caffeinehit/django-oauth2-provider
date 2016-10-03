@@ -557,9 +557,9 @@ class GrantTest(BaseOAuth2TestCase):
     def test_grant_create_grant(self):
         token = self._login_authorize_get_token()['access_token']
 
-        response1 = self.client.post(self.grant_url() + '?access_token=%s' % token, {
+        response1 = self.client.post(self.grant_url(), {
           'client_id': self.get_client().client_id,
-        })
+        }, HTTP_AUTHORIZATION='OAUTH %s' % token)
 
         self.assertEqual(200, response1.status_code, response1.content)
 

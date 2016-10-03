@@ -63,6 +63,17 @@ class GrantView(GrantView):
     """
     Implementation of :class:`provider.views.Grant`
     """
+    """
+    Authenticate a user via access token and client object.
+    """
+
+    def authenticate(self, access_token=None, client=None):
+        try:
+            return AccessToken.objects.get(token=access_token,
+                expires__gt=now())
+        except AccessToken.DoesNotExist:
+            return None
+
     def get_client(self, client_id):
         try:
             return Client.objects.get(client_id=client_id)
