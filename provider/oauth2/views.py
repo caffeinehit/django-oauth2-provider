@@ -2,12 +2,12 @@ from datetime import timedelta
 from django.core.urlresolvers import reverse
 from .. import constants
 from ..views import Capture, Authorize, Redirect
-from ..views import AccessToken as AccessTokenView, OAuthError
+from ..views import AccessToken as AccessTokenView, OAuthError, Grant as GrantView
 from ..utils import now
 from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
-from .models import Client, RefreshToken, AccessToken
+from .models import Client, RefreshToken, AccessToken, Grant
 from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
 
 
@@ -57,6 +57,57 @@ class Redirect(Redirect):
     Implementation of :class:`provider.views.Redirect`
     """
     pass
+
+
+class GrantView(GrantView):
+    """
+    Implementation of :class:`provider.views.Grant`
+    """
+    """
+    Authenticate a user via access token and client object.
+    """
+
+    def authenticate(self, access_token=None, client=None):
+        try:
+            return AccessToken.objects.get(token=access_token,
+                expires__gt=now())
+        except AccessToken.DoesNotExist:
+            return None
+
+    def get_client(self, client_id):
+        try:
+            return Client.objects.get(client_id=client_id)
+        except Client.DoesNotExist:
+            return None
+
+    def get_grant(self, user, client):
+        scope = 2
+        try:
+            # Attempt to fetch an existing access token.
+            g = Grant.objects.get(user_id=user.id, client=client, expires__gt=now())
+        except Grant.DoesNotExist:
+            # None found... make a new one!
+            g = self.create_grant(user, scope, client)
+        return g
+
+    def create_grant(self, user, scope, client):
+        return Grant.objects.create(
+            user=user,
+            client=client,
+            scope=scope,
+            expires=now() + constants.GRANT_EXPIRE_DELTA,
+        )
+
+    def list_grants(self, user):
+        try:
+          valid = Grant.objects.filter(user=user.id, expires__gt=now())
+
+          if len(valid) == 0:
+            return None
+
+          return valid.values()
+        except Grant.DoesNotExist:
+          return None
 
 
 class AccessTokenView(AccessTokenView):
@@ -118,11 +169,12 @@ class AccessTokenView(AccessTokenView):
         )
 
     def invalidate_grant(self, grant):
-        if constants.DELETE_EXPIRED:
-            grant.delete()
-        else:
-            grant.expires = now() - timedelta(days=1)
-            grant.save()
+        if not constants.LONG_LIVE_GRANT:
+          if constants.DELETE_EXPIRED:
+              grant.delete()
+          else:
+              grant.expires = now() - timedelta(days=1)
+              grant.save()
 
     def invalidate_refresh_token(self, rt):
         if constants.DELETE_EXPIRED:

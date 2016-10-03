@@ -6,7 +6,7 @@ from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
-from . import constants, scope
+from . import constants, scope, utils
 
 
 class OAuthError(Exception):
@@ -341,6 +341,124 @@ class Redirect(OAuthView, Mixin):
         self.clear_data(request)
 
         return HttpResponseRedirect(redirect_uri)
+
+
+class Grant(OAuthView, Mixin):
+
+    def list_grants(self, user):
+        raise NotImplementedError
+
+    def get_client(self, client_id):
+        raise NotImplementedError
+
+    def authenticate(self, access_token, client):
+        raise NotImplementedError
+
+    def error_response(self, error, mimetype='application/json', status=400,
+            **kwargs):
+        """
+        Return an error response to the client with default status code of *400*
+        """
+        return HttpResponse(json.dumps(error), mimetype=mimetype,
+                status=status, **kwargs)
+
+    def get_authenticated_user(self, request):
+        key = request.GET.get('access_token')
+        if not key:
+            auth_header_value = request.META.get('HTTP_AUTHORIZATION')
+            if auth_header_value:
+                key = auth_header_value.split(' ')[1]
+        if not key:
+            return None
+
+        authenticated = self.authenticate(access_token=key, client=None)
+        if authenticated is None:
+            return None
+
+        return authenticated.user;
+
+    def post(self, request):
+        if constants.ENFORCE_SECURE and not request.is_secure():
+            return self.error_response({
+                'error': 'invalid_request',
+                'error_description': _("A secure connection is required.")})
+
+        user = self.get_authenticated_user(request)
+        if user is None:
+            response_data = { 
+                'error': 'non_authenticated'
+            }
+            return HttpResponse(
+                json.dumps(response_data),
+                status=401,
+                mimetype='application/json',
+            )
+
+        if not 'client_id' in request.POST:
+            return self.error_response({
+                'error': 'invalid_request',
+                'error_description': _("No 'client_id' included in the "
+                    "request.")})
+
+        client = self.get_client(request.POST['client_id'])
+
+        if client is None:
+            return self.error_response({
+                'error': 'invalid_request',
+                'error_description': _("Invalid client_id in the "
+                  "request.")})
+
+        grant = self.get_grant(user, client)
+        if grant is None:
+            return self.error_response({
+                'error': 'invalid_request',
+                'error_description': _("Invalid client_id in the "
+                  "request.")})
+
+        response_data = {
+            'code': grant.code,
+            'client_id': client.client_id,
+            'expires_in': utils.get_expires_in(grant.expires),
+            'scope': ' '.join(scope.names(grant.scope)),
+        }
+
+        return HttpResponse(
+            json.dumps(response_data), mimetype='application/json'
+        )
+
+    def get(self, request):
+        if constants.ENFORCE_SECURE and not request.is_secure():
+            return self.error_response({
+                'error': 'invalid_request',
+                'error_description': _("A secure connection is required.")})
+
+        user = self.get_authenticated_user(request)
+        if user is None:
+            response_data = { 
+                'error': 'non_authenticated'
+            }
+            return HttpResponse(
+                json.dumps(response_data),
+                status=401,
+                mimetype='application/json',
+            )
+
+        grants = self.list_grants(user)
+        response_data = []
+
+        if grants is not None:
+          for grant in grants:
+            response_data.append({
+              'code': grant['code'],
+              'client_id': grant['client_id'],
+              'expires_in': utils.get_expires_in(grant['expires']),
+              'scope': ' '.join(scope.names(grant['scope'])),
+            })
+
+        return HttpResponse(
+            json.dumps(response_data), mimetype='application/json'
+        )
+
 
 
 class AccessToken(OAuthView, Mixin):
