@@ -4,12 +4,12 @@ from setuptools import setup, find_packages
 import provider
 
 setup(
-    name='django-oauth2-provider',
+    name='django-oauth2-provider-ng',
     version=provider.__version__,
     description='Provide OAuth2 access to your app',
     long_description=open('README.rst').read(),
-    author='Alen Mujezinovic',
-    author_email='alen@caffeinehit.com',
+    author='ifanr',
+    author_email='ifanrx@ifanr.com',
     url = 'https://github.com/ifanrx/django-oauth2-provider',
     packages= find_packages(exclude=('tests*',)),
     classifiers=[
