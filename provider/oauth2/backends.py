@@ -53,7 +53,7 @@ class RequestParamsClientBackend(object):
         if request is None:
             return None
 
-        form = ClientAuthForm(request.REQUEST)
+        form = ClientAuthForm(request.GET or request.POST)
 
         if form.is_valid():
             return form.cleaned_data.get('client')
