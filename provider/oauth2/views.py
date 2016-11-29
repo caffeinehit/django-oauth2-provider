@@ -1,15 +1,17 @@
+import json
 from datetime import timedelta
+from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from .. import constants
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
 from ..utils import now
+from .. import constants, scope
 from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
 from .models import Client, RefreshToken, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
-
 
 class Capture(Capture):
     """
@@ -91,6 +93,21 @@ class AccessTokenView(AccessTokenView):
         if not form.is_valid():
             raise OAuthError(form.errors)
         return form.cleaned_data
+
+    def access_token_response(self, access_token):
+        """
+        Returns a successful response after creating the access token
+        as defined in :final:`4.2.2`.
+        """
+        return HttpResponse(
+            json.dumps({
+                'access_token': access_token.token,
+                'expires_in': access_token.get_expire_delta(),
+                'refresh_token': access_token.refresh_token.token,
+                'scope': ' '.join(scope.names(access_token.scope)),
+                'token_type': 'Bearer',
+            }), mimetype='application/json'
+        )
 
     def get_access_token(self, request, user, scope, client):
         try:
