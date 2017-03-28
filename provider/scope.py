@@ -9,6 +9,8 @@ See :class:`provider.scope.to_int` on how scopes are combined.
 """
 
 from .constants import SCOPES
+from functools import reduce
+from six import iteritems
 
 SCOPE_NAMES = [(name, name) for (value, name) in SCOPES]
 SCOPE_NAME_DICT = dict([(name, value) for (value, name) in SCOPES])
@@ -73,7 +75,7 @@ def to_names(scope):
     """
     return [
         name
-        for (name, value) in SCOPE_NAME_DICT.iteritems()
+        for (name, value) in iteritems(SCOPE_NAME_DICT)
         if check(value, scope)
     ]
 
