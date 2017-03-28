@@ -44,6 +44,7 @@ class Client(models.Model):
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
+    client_extra_attr = models.TextField(blank=True)
 
     def __unicode__(self):
         return self.redirect_uri
@@ -60,6 +61,27 @@ class Client(models.Model):
                     client_id=self.client_id,
                     client_secret=self.client_secret,
                     client_type=self.client_type)
+
+    @property
+    def is_confidential(self):
+      return self.client_type == constants.CONFIDENTIAL
+
+    @property
+    def is_public(self):
+      return self.client_type == constants.PUBLIC
+
+    @property
+    def is_insecure(self):
+      return self.client_type in (constants.INSECURE,
+                                  constants.SSO_ENDUSER_INSECURE)
+
+    @property
+    def is_sso(self):
+      return self.client_type in constants.SSO_CLIENTS
+
+    @property
+    def is_socialbase(self):
+      return self.client_type in constants.SOCIALBASE_CLIENTS
 
     @classmethod
     def deserialize(cls, data):
@@ -80,6 +102,9 @@ class Client(models.Model):
             kwargs[name] = val
 
         return cls(**kwargs)
+
+    class Meta:
+        app_label = 'provider'
 
 
 class Grant(models.Model):
@@ -104,9 +129,13 @@ class Grant(models.Model):
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
     scope = models.IntegerField(default=0)
+    extra_data = models.TextField(blank=True)
 
     def __unicode__(self):
         return self.code
+
+    class Meta:
+        app_label = 'provider'
 
 
 class AccessToken(models.Model):
@@ -135,6 +164,7 @@ class AccessToken(models.Model):
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
+    extra_data = models.TextField(blank=True)
 
     objects = AccessTokenManager()
 
@@ -165,6 +195,9 @@ class AccessToken(models.Model):
         timedelta = expiration - reference
         return timedelta.days*86400 + timedelta.seconds
 
+    class Meta:
+        app_label = 'provider'
+
 
 class RefreshToken(models.Model):
     """
@@ -188,3 +221,6 @@ class RefreshToken(models.Model):
 
     def __unicode__(self):
         return self.token
+
+    class Meta:
+        app_label = 'provider'
