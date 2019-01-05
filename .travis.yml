@@ -1,7 +1,9 @@
 sudo: false
 language: python
 python:
-  - "2.7"
-  - "3.6"
+  - "2.7-django1.11"
+  - "3.6-django1.11"
+  - "3.6-django2.0"
+  - "3.6-django2.1"
 install: pip install tox-travis
 script: tox
