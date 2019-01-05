@@ -1,12 +1,12 @@
 language: python
 env:
-  - DJANGO="django>=1.7,<1.9"
+  - DJANGO="Django>=2.1"
 python:
-  - "2.7"
+  - "3.6"
 # command to install dependencies
 install:
     - pip install -q -r requirements.txt
-    - pip install sqlparse
+    - pip install sqlparse six
     - pip install -q $DJANGO --upgrade
     - python setup.py develop
 script: ./test.sh
