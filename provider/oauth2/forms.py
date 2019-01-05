@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.conf import settings
-from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
 from provider.forms import OAuthForm, OAuthValidationError

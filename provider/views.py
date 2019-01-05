@@ -1,11 +1,15 @@
+from __future__ import absolute_import
+
 import json
-import urlparse
+
+from six.moves.urllib_parse import urlparse, ParseResult
+
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView, View
 from django.core.exceptions import ObjectDoesNotExist
-from oauth2.models import Client, Scope
+from provider.oauth2.models import Client, Scope
 from provider import constants
 
 
@@ -335,7 +339,7 @@ class RedirectViewBase(AuthUtilMixin, View):
 
         redirect_uri = data.get('redirect_uri', None) or client.redirect_uri
 
-        parsed = urlparse.urlparse(redirect_uri)
+        parsed = urlparse(redirect_uri)
 
         query = QueryDict('', mutable=True)
 
@@ -351,7 +355,7 @@ class RedirectViewBase(AuthUtilMixin, View):
 
         parsed = parsed[:4] + (query.urlencode(), '')
 
-        redirect_uri = urlparse.ParseResult(*parsed).geturl()
+        redirect_uri = ParseResult(*parsed).geturl()
 
         self.clear_data(request)
 
@@ -610,5 +614,5 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
 
         try:
             return handler(request, request.POST, client)
-        except OAuthError, e:
+        except OAuthError as e:
             return self.error_response(e.args[0])

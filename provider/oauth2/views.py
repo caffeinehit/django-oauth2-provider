@@ -1,5 +1,5 @@
 from datetime import timedelta
-from django.core.urlresolvers import reverse
+from django.shortcuts import reverse
 from provider import constants
 from provider.views import CaptureViewBase, AuthorizeViewBase, RedirectViewBase
 from provider.views import AccessTokenViewBase, OAuthError
