@@ -1,6 +1,8 @@
+import base64
 import json
-from six.moves.urllib_parse import urlparse, parse_qs
 import datetime
+from six.moves.urllib_parse import urlparse, parse_qs
+
 from unittest import SkipTest
 from django.http import QueryDict
 from django.conf import settings
@@ -49,14 +51,16 @@ class BaseOAuth2TestCase(TestCase):
 
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
-            url_func = lambda: self.auth_url() + '?client_id=%s&response_type=code&state=abc' % self.get_client().client_id
+            url_func = lambda: self.auth_url() + '?client_id={}&response_type=code&state=abc'.format(
+                self.get_client().client_id
+            )
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
 
         response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': 'read'})
         self.assertEqual(302, response.status_code, response.content)
-        self.assertTrue(self.redirect_url() in response['Location'])
+        self.assertIn(self.redirect_url(), response['Location'])
 
 
 class AuthorizationTest(BaseOAuth2TestCase):
@@ -90,7 +94,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("An unauthorized client tried to access your resources." in response.content)
+        self.assertIn("An unauthorized client tried to access your resources.", response.content.decode('utf8'))
 
     def test_authorization_rejects_invalid_client_id(self):
         self.login()
@@ -98,7 +102,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("An unauthorized client tried to access your resources." in response.content)
+        self.assertIn(b"An unauthorized client tried to access your resources.", response.content)
 
     def test_authorization_requires_response_type(self):
         self.login()
@@ -106,7 +110,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"No 'response_type' supplied.") in response.content)
+        self.assertIn(escape(u"No 'response_type' supplied."), response.content.decode('utf8'))
 
     def test_authorization_requires_supported_response_type(self):
         self.login()
@@ -114,7 +118,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
+        self.assertIn(escape(u"'unsupported' is not a supported response type."), response.content.decode('utf8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
@@ -133,7 +137,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
+        self.assertIn(escape("The requested redirect didn't match the client settings."), response.content.decode('utf8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
             self.get_client().client_id,
@@ -148,7 +152,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"Invalid scope.") in response.content)
+        self.assertIn(escape(u"Invalid scope."), response.content.decode('utf8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
             self.get_client().client_id,
@@ -428,9 +432,12 @@ class AuthBackendTest(BaseOAuth2TestCase):
 
     def test_basic_client_backend(self):
         request = type('Request', (object,), {'META': {}})()
-        request.META['HTTP_AUTHORIZATION'] = "Basic " + "{0}:{1}".format(
+        user_pass = "{0}:{1}".format(
             self.get_client().client_id,
-            self.get_client().client_secret).encode('base64')
+            self.get_client().client_secret
+        )
+        user_pass64 = base64.b64encode(user_pass.encode('utf8')).decode('utf8')
+        request.META['HTTP_AUTHORIZATION'] = "Basic {}".format(user_pass64)
 
         self.assertEqual(BasicClientBackend().authenticate(request).id,
                          2, "Didn't return the right client.")
@@ -470,13 +477,13 @@ class EnforceSecureTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("A secure connection is required." in response.content)
+        self.assertIn("A secure connection is required.", response.content.decode('utf8'))
 
     def test_access_token_enforces_SSL(self):
         response = self.client.post(self.access_token_url(), {})
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("A secure connection is required." in response.content)
+        self.assertIn("A secure connection is required.", response.content.decode('utf8'))
 
 
 class ClientFormTest(TestCase):
@@ -548,11 +555,12 @@ class DeleteExpiredTest(BaseOAuth2TestCase):
 
         self.assertEqual(302, response.status_code)
         location = response['Location']
-        self.assertFalse('error' in location)
-        self.assertTrue('code' in location)
-
+        self.assertNotIn('error', location)
+        self.assertIn('code', location)
+        print(location)
         # verify that Grant with code exists
-        code = parse_qs(location)['code'][0]
+        parsed_location = urlparse(location)
+        code = parse_qs(parsed_location.query)['code'][0]
         self.assertTrue(Grant.objects.filter(code=code).exists())
 
         # use the code/grant

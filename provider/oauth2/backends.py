@@ -1,3 +1,5 @@
+import base64
+
 from provider.utils import now
 from provider.oauth2.forms import ClientAuthForm, PublicPasswordGrantForm
 from provider.oauth2.models import AccessToken
@@ -28,8 +30,9 @@ class BasicClientBackend(object):
             return None
 
         try:
-            basic, base64 = auth.split(' ')
-            client_id, client_secret = base64.decode('base64').split(':')
+            basic, enc_user_passwd = auth.split(' ')
+            user_pass = base64.b64decode(enc_user_passwd).decode('utf8')
+            client_id, client_secret = user_pass.split(':')
 
             form = ClientAuthForm({
                 'client_id': client_id,
@@ -53,7 +56,11 @@ class RequestParamsClientBackend(object):
         if request is None:
             return None
 
-        form = ClientAuthForm(request.REQUEST)
+        if hasattr(request, 'REQUEST'):
+            args = request.REQUEST
+        else:
+            args = request.POST or request.GET
+        form = ClientAuthForm(args)
 
         if form.is_valid():
             return form.cleaned_data.get('client')
@@ -74,7 +81,11 @@ class PublicPasswordBackend(object):
         if request is None:
             return None
 
-        form = PublicPasswordGrantForm(request.REQUEST)
+        if hasattr(request, 'REQUEST'):
+            args = request.REQUEST
+        else:
+            args = request.POST or request.GET
+        form = PublicPasswordGrantForm(args)
 
         if form.is_valid():
             return form.cleaned_data.get('client')

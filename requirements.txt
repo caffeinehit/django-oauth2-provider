@@ -1,2 +1,4 @@
 Django>=2.1
 shortuuid>=0.4
+six>=0.11.0
+sqlparse>=0.2.4
