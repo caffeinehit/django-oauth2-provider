@@ -1,3 +1,6 @@
+v 2.1
+* Fixed documentation links.  Removed 2.0 package.
+
 v 2.0
 -----
 * Update for current Django 1.11, 2.0, and 2.1.
