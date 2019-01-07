@@ -30,7 +30,7 @@ class Client(models.Model):
 
     Clients are outlined in the :rfc:`2` and its subsections.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='oauth2_client',
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING, related_name='oauth2_client',
         blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
@@ -90,10 +90,10 @@ class AuthorizedClientManager(models.Manager):
 
 
 class AuthorizedClient(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING,
                              related_name='oauth2_authorized_client')
-    client = models.ForeignKey(Client)
-    scope = models.ManyToManyField(Scope)
+    client = models.ForeignKey('Client', models.DO_NOTHING)
+    scope = models.ManyToManyField('Scope')
     authorized_at = models.DateTimeField(auto_now_add=True, blank=True)
 
     objects = AuthorizedClientManager()
@@ -120,12 +120,12 @@ class Grant(models.Model):
     * :attr:`redirect_uri`
     * :attr:`scope`
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
-    client = models.ForeignKey(Client)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING)
+    client = models.ForeignKey('Client', models.DO_NOTHING)
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
-    scope = models.ManyToManyField(Scope)
+    scope = models.ManyToManyField('Scope')
 
     def __unicode__(self):
         return self.code
@@ -177,11 +177,11 @@ class AccessToken(models.Model):
     * :meth:`get_expire_delta` - returns an integer representing seconds to
         expiry
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING)
     token = models.CharField(max_length=255, default=long_token, db_index=True)
-    client = models.ForeignKey(Client)
+    client = models.ForeignKey('Client', models.DO_NOTHING)
     expires = models.DateTimeField()
-    scope = models.ManyToManyField(Scope)
+    scope = models.ManyToManyField('Scope')
 
     objects = AccessTokenManager()
 
@@ -246,11 +246,11 @@ class RefreshToken(models.Model):
     * :attr:`client` - :class:`Client`
     * :attr:`expired` - ``boolean``
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.DO_NOTHING)
     token = models.CharField(max_length=255, default=long_token)
-    access_token = models.OneToOneField(AccessToken,
+    access_token = models.OneToOneField('AccessToken', models.DO_NOTHING,
             related_name='refresh_token')
-    client = models.ForeignKey(Client)
+    client = models.ForeignKey('Client', models.DO_NOTHING)
     expired = models.BooleanField(default=False)
 
     objects = RefreshTokenManager()

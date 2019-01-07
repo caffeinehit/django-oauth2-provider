@@ -1,12 +1,7 @@
+sudo: false
 language: python
-env:
-  - DJANGO="django>=1.7,<1.9"
 python:
   - "2.7"
-# command to install dependencies
-install:
-    - pip install -q -r requirements.txt
-    - pip install sqlparse
-    - pip install -q $DJANGO --upgrade
-    - python setup.py develop
-script: ./test.sh
+  - "3.6"
+install: pip install tox-travis
+script: tox

@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                 ('client_secret', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('client_type', models.IntegerField(choices=[(0, b'Confidential (Web applications)'), (1, b'Public (Native and JS applications)')])),
                 ('auto_authorize', models.BooleanField(default=False)),
-                ('user', models.ForeignKey(related_name='oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('user', models.ForeignKey(related_name='oauth2_client', blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete=models.DO_NOTHING)),
             ],
             options={
                 'db_table': 'oauth2_client',
@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
                 ('code', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('expires', models.DateTimeField(default=provider.utils.get_code_expiry)),
                 ('redirect_uri', models.CharField(max_length=255, blank=True)),
-                ('client', models.ForeignKey(to='oauth2.Client')),
+                ('client', models.ForeignKey(to='oauth2.Client', on_delete=models.DO_NOTHING)),
             ],
             options={
                 'db_table': 'oauth2_grant',
@@ -74,9 +74,9 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('token', models.CharField(default=provider.utils.long_token, max_length=255)),
                 ('expired', models.BooleanField(default=False)),
-                ('access_token', models.OneToOneField(related_name='refresh_token', to='oauth2.AccessToken')),
-                ('client', models.ForeignKey(to='oauth2.Client')),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('access_token', models.OneToOneField(related_name='refresh_token', to='oauth2.AccessToken', on_delete=models.DO_NOTHING)),
+                ('client', models.ForeignKey(to='oauth2.Client', on_delete=models.DO_NOTHING)),
+                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)),
             ],
             options={
                 'db_table': 'oauth2_refreshtoken',
@@ -103,13 +103,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='grant',
             name='user',
-            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='authorizedclient',
             name='client',
-            field=models.ForeignKey(to='oauth2.Client'),
+            field=models.ForeignKey(to='oauth2.Client', on_delete=models.DO_NOTHING),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -121,7 +121,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='authorizedclient',
             name='user',
-            field=models.ForeignKey(related_name='oauth2_authorized_client', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='oauth2_authorized_client', to=settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -131,7 +131,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='accesstoken',
             name='client',
-            field=models.ForeignKey(to='oauth2.Client'),
+            field=models.ForeignKey(to='oauth2.Client', on_delete=models.DO_NOTHING),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -143,7 +143,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='accesstoken',
             name='user',
-            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING),
             preserve_default=True,
         ),
         migrations.RunSQL("INSERT INTO oauth2_scope (name, description) values ('read', 'Read-Only access') "),

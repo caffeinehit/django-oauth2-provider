@@ -1,7 +1,7 @@
+from six import string_types
 from django import forms
 from django.contrib.auth import authenticate
 from django.conf import settings
-from django.utils.encoding import smart_unicode
 from django.utils.translation import ugettext as _
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
 from provider.forms import OAuthForm, OAuthValidationError
@@ -52,7 +52,7 @@ class ScopeModelChoiceField(forms.ModelMultipleChoiceField):
     # widget = forms.TextInput
 
     def to_python(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, string_types):
             return [s for s in value.split(' ') if s != '']
         else:
             return value
@@ -160,7 +160,7 @@ class AuthorizationForm(ScopeModelMixin, OAuthForm):
 
         grant = Grant(**kwargs)
         grant.save()
-        grant.scope = self.cleaned_data.get('scope')
+        grant.scope.set(self.cleaned_data.get('scope'))
         return grant
 
 
