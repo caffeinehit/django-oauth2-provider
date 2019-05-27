@@ -1,4 +1,11 @@
+v 2.2
+-----
+* Improve Oauth2UserMiddleware
+* Prevent SessionMiddleware from creating new sessions when using oauth tokens.
+* Add OAuthRequiredMixin to allow scope enforcement
+
 v 2.1
+-----
 * Fixed documentation links.  Removed 2.0 package.
 
 v 2.0
@@ -7,7 +14,7 @@ v 2.0
 
 v 1.2
 -----
-Updated to make skopes configurable in the database and update for Django 1.7
+Updated to make scopes configurable in the database and update for Django 1.7
 
 v 1.0
 -----

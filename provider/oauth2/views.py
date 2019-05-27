@@ -118,7 +118,7 @@ class AccessTokenView(AccessTokenViewBase):
         except models.AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
-            if client.client_type != 1:
+            if client.client_type != constants.PUBLIC:
                 self.create_refresh_token(request, user, scope, at, client)
         return at
 

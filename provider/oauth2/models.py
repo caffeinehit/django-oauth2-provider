@@ -44,7 +44,7 @@ class Client(models.Model):
         return self.redirect_uri
 
     def get_default_token_expiry(self):
-        public = (self.client_type == 1)
+        public = (self.client_type == constants.PUBLIC)
         return get_token_expiry(public)
 
     class Meta:
