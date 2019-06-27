@@ -1,5 +1,11 @@
+from __future__ import absolute_import
+
+import codecs
+
+from future import standard_library
+standard_library.install_aliases()
 import json
-import urlparse
+import urllib.parse
 import datetime
 from django.http import QueryDict
 from django.conf import settings
@@ -73,7 +79,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
         # Login redirect
         self.assertEqual(302, response.status_code)
-        self.assertEqual('/login/', urlparse.urlparse(response['Location']).path)
+        self.assertEqual('/login/', urllib.parse.urlparse(response['Location']).path)
 
         self.login()
 
@@ -238,7 +244,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self._login_and_authorize()
 
         response = self.client.get(self.redirect_url())
-        query = QueryDict(urlparse.urlparse(response['Location']).query)
+        query = QueryDict(urllib.parse.urlparse(response['Location']).query)
         code = query['code']
 
         response = self.client.post(self.access_token_url(), {
@@ -259,7 +265,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self._login_and_authorize()
         response = self.client.get(self.redirect_url())
 
-        query = QueryDict(urlparse.urlparse(response['Location']).query)
+        query = QueryDict(urllib.parse.urlparse(response['Location']).query)
         code = query['code']
 
         response = self.client.post(self.access_token_url(), {
@@ -362,10 +368,14 @@ class AuthBackendTest(BaseOAuth2TestCase):
 
     def test_basic_client_backend(self):
         request = type('Request', (object,), {'META': {}})()
-        request.META['HTTP_AUTHORIZATION'] = "Basic " + "{0}:{1}".format(
-            self.get_client().client_id,
-            self.get_client().client_secret).encode('base64')
-
+        request.META['HTTP_AUTHORIZATION'] = \
+            codecs.decode(
+                "Basic " + "{0}:{1}".format(
+                    self.get_client().client_id,
+                    self.get_client().client_secret
+                ),
+                'base64'
+        )
         self.assertEqual(BasicClientBackend().authenticate(request).id,
                          2, "Didn't return the right client.")
 

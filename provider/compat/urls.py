@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 try:
     from django.conf.urls import url, include
 except ImportError: # django 1.3

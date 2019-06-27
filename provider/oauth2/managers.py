@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from ..utils import now
 from django.db import models
 

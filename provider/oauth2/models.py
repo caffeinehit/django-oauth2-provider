@@ -3,6 +3,7 @@ Default model implementations. Custom database or OAuth backends need to
 implement these models with fields and and methods to be compatible with the
 views in :attr:`provider.views`.
 """
+from __future__ import absolute_import
 
 from django.db import models
 from django.conf import settings
