@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 
-from future import standard_library
-standard_library.install_aliases()
+
 from builtins import object
 import json
-import urllib.parse
+from six.moves import urllib
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _

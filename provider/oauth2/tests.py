@@ -2,10 +2,8 @@ from __future__ import absolute_import
 
 import codecs
 
-from future import standard_library
-standard_library.install_aliases()
 import json
-import urllib.parse
+from six.moves import urllib
 import datetime
 from django.http import QueryDict
 from django.conf import settings
