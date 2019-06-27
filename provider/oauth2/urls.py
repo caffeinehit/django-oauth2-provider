@@ -32,6 +32,7 @@ that are meant for client (as defined in :rfc:`1`) interaction.
     Errors are outlined in :rfc:`5.2`.
 
 """
+from __future__ import absolute_import
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt

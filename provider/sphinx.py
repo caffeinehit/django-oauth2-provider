@@ -1,9 +1,12 @@
 """
 Custom Sphinx documentation module to link to parts of the OAuth2 draft.
 """
+from __future__ import absolute_import
+
 from docutils import nodes, utils
 
 base_url = "http://tools.ietf.org/html/rfc6749"
+
 
 def rfclink(name, rawtext, text, lineno, inliner, options={}, content=[]):
     """Link to the OAuth2 draft.

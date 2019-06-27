@@ -1,3 +1,8 @@
+from __future__ import absolute_import
+
+import codecs
+
+from builtins import object
 from ..utils import now
 from .forms import ClientAuthForm
 from .models import AccessToken
@@ -29,8 +34,7 @@ class BasicClientBackend(object):
 
         try:
             basic, base64 = auth.split(' ')
-            client_id, client_secret = base64.decode('base64').split(':')
-
+            client_id, client_secret = codecs.decode(base64, "base64").split(':')
             form = ClientAuthForm({
                 'client_id': client_id,
                 'client_secret': client_secret})
