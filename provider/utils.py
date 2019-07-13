@@ -11,6 +11,7 @@ try:
 except ImportError:
     timezone = None
 
+
 def now():
     if timezone:
         return timezone.now()
@@ -23,7 +24,7 @@ def short_token():
     """
     Generate a hash that can be used as an application identifier
     """
-    hash = hashlib.sha1(shortuuid.uuid())
+    hash = hashlib.sha1(shortuuid.uuid().encode("utf-8"))
     hash.update(settings.SECRET_KEY)
     return hash.hexdigest()[::2]
 
@@ -32,7 +33,7 @@ def long_token():
     """
     Generate a hash that can be used as an application secret
     """
-    hash = hashlib.sha1(shortuuid.uuid())
+    hash = hashlib.sha1(shortuuid.uuid().encode("utf-8"))
     hash.update(settings.SECRET_KEY)
     return hash.hexdigest()
 
