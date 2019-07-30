@@ -1,13 +1,16 @@
 
+from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.deprecation import MiddlewareMixin
 
 from provider.oauth2.models import AccessToken
 
 import logging
 log = logging.getLogger(__name__)
 
-class Oauth2UserMiddleware(object):
+
+class Oauth2UserMiddleware(MiddlewareMixin):
     """
     Middleware for using OAuth credentials to authenticate requests
 
@@ -32,6 +35,13 @@ class Oauth2UserMiddleware(object):
                 " Insert 'django.contrib.auth.middleware.AuthenticationMiddleware'"
                 " before this Oauth2UserMiddleware class."
             )
+        if 'django.contrib.auth.backends.RemoteUserBackend' not in settings.AUTHENTICATION_BACKENDS:
+            raise ImproperlyConfigured(
+                "Remote user authentication backend is required for this module to work."
+                " Insert 'django.contrib.auth.backends.RemoteUserBackend' into the"
+                " AUTHENTICATION_BACKENDS list in your settings."
+
+            )
         try:
             access_token_http = self._http_access_token(request)
             access_token_get = request.GET.get('access_token', access_token_http)
@@ -49,6 +59,13 @@ class Oauth2UserMiddleware(object):
                 user = auth.authenticate(remote_user=token.user.username)
                 auth.login(request, user)
                 request.oauth2_client = token.client
+                request.oauth2_token = token
         except Exception as e:
             log.error("Oauth2UserMiddleware encountered an exception! "
                       "{}: {}".format(e.__class__.__name__, e))
+
+    def process_response(self, request, response):
+        if hasattr(request, 'oauth2_token'):
+            # Set modified=False to prevent the session from being stored and the cookie from being sent
+            request.session.modified = False
+        return response

@@ -51,9 +51,10 @@ class BaseOAuth2TestCase(TestCase):
 
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
-            url_func = lambda: self.auth_url() + '?client_id={}&response_type=code&state=abc'.format(
-                self.get_client().client_id
-            )
+            def url_func():
+                return self.auth_url() + '?client_id={}&response_type=code&state=abc'.format(
+                    self.get_client().client_id
+                )
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
@@ -344,7 +345,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_public(self):
         c = self.get_client()
-        c.client_type = 1 # public
+        c.client_type = constants.PUBLIC
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -363,7 +364,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = constants.CONFIDENTIAL
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -379,7 +380,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_confidential_no_secret(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = constants.CONFIDENTIAL
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -393,7 +394,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_invalid_password_public(self):
         c = self.get_client()
-        c.client_type = 1 # public
+        c.client_type = constants.PUBLIC
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -408,7 +409,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
     def test_password_grant_invalid_password_confidential(self):
         c = self.get_client()
-        c.client_type = 0 # confidential
+        c.client_type = constants.CONFIDENTIAL
         c.save()
 
         response = self.client.post(self.access_token_url(), {
@@ -497,7 +498,7 @@ class ClientFormTest(TestCase):
             'name': 'TestName',
             'url': 'http://127.0.0.1:8000',
             'redirect_uri': 'http://localhost:8000/',
-            'client_type': constants.CLIENT_TYPES[0][0]})
+            'client_type': constants.CONFIDENTIAL})
         self.assertTrue(form.is_valid())
         form.save()
 

@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES
+from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES, PUBLIC
 from provider.forms import OAuthForm, OAuthValidationError
 from provider.utils import now
 from provider.oauth2.models import Client, Grant, RefreshToken, Scope
@@ -298,7 +298,7 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         except Client.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_client'})
 
-        if client.client_type != 1: # public
+        if client.client_type != PUBLIC: # public
             raise OAuthValidationError({'error': 'invalid_client'})
 
         data['client'] = client
