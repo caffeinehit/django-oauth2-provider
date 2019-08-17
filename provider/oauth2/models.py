@@ -53,7 +53,7 @@ class Client(models.Model):
 
 
 class Scope(models.Model):
-    name = models.CharField(max_length=15, primary_key=True)
+    name = models.CharField(max_length=50, primary_key=True)
     description = models.CharField(max_length=256, default='', blank=True)
 
     def __unicode__(self):
