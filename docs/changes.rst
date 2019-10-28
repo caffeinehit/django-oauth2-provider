@@ -1,3 +1,11 @@
+v 2.4
+-----
+* Add HTTP Authorization Bearer token support to Oauth2UserMiddleware
+
+v 2.3
+-----
+* Increase oauth2 scope name field size
+
 v 2.2
 -----
 * Improve Oauth2UserMiddleware
