@@ -25,7 +25,19 @@ class Oauth2UserMiddleware(MiddlewareMixin):
 
     # Fixme: Not yet implemented
     def _http_access_token(self, request):
-        return None
+
+        try:
+            auth_header = request.environ.get('HTTP_AUTHORIZATION')
+            if not auth_header:
+                return None
+            parts = auth_header.split()
+            if len(parts) != 2:
+                return None
+            scope, token = parts
+            if scope.lower() == "bearer":
+                return token
+        except:
+            log.exception("Unable to parse access token!")
 
     def process_request(self, request):
         # AuthenticationMiddleware is required
