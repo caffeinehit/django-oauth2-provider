@@ -551,6 +551,9 @@ class AccessToken(OAuthView, Mixin):
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
 
+        if request.content_type == 'application/json':
+             request.POST = json.loads(request.body)
+
         if not 'grant_type' in request.POST:
             return self.error_response({
                 'error': 'invalid_request',
