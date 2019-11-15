@@ -552,7 +552,7 @@ class AccessToken(OAuthView, Mixin):
                 'error_description': _("A secure connection is required.")})
 
         if request.content_type == 'application/json':
-             request.POST = json.loads(request.body)
+             request.POST = json.loads(request.body.decode('utf-8'))  # Py3 compatibility
 
         if not 'grant_type' in request.POST:
             return self.error_response({
