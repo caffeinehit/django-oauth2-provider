@@ -47,7 +47,7 @@ class ClientAuthForm(forms.Form):
 
 class ScopeChoiceField(forms.ChoiceField):
     """
-    Custom form field that seperates values on space as defined in
+    Custom form field that separates values on space as defined in
     :rfc:`3.3`.
     """
     widget = forms.SelectMultiple
