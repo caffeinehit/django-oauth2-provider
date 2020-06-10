@@ -8,3 +8,5 @@ build
 venv
 .idea
 *.bak
+.python-version
+db.sqlite
