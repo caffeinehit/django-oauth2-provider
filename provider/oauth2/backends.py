@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import codecs
+import base64
 
 from builtins import object
 from ..utils import now
@@ -33,8 +34,8 @@ class BasicClientBackend(object):
             return None
 
         try:
-            basic, base64 = auth.split(' ')
-            client_id, client_secret = codecs.decode(base64, "base64").split(':')
+            basic, username_password_enc = auth.split(' ')
+            client_id, client_secret = base64.b64decode(username_password_enc).decode().split(':', 1)
             form = ClientAuthForm({
                 'client_id': client_id,
                 'client_secret': client_secret})
@@ -57,7 +58,11 @@ class RequestParamsClientBackend(object):
         if request is None:
             return None
 
-        form = ClientAuthForm(request.GET or request.POST)
+        if hasattr(request, 'REQUEST'):
+            args = request.REQUEST
+        else:
+            args = request.POST or request.GET
+        form = ClientAuthForm(args)
 
         if form.is_valid():
             return form.cleaned_data.get('client')
