@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import codecs
 import base64
 
 from builtins import object
