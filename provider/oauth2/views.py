@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from datetime import timedelta
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from ..views import Capture, Authorize, Redirect
 from ..views import AccessToken as AccessTokenView, OAuthError
 from ..utils import now

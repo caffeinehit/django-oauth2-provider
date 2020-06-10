@@ -7,12 +7,11 @@ from six.moves import urllib
 import datetime
 from django.http import QueryDict
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .. import constants, scope
-from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
@@ -21,7 +20,6 @@ from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
 
 
-@skipIfCustomUser
 class BaseOAuth2TestCase(TestCase):
     def login(self):
         self.client.login(username='test-user-1', password='test')
