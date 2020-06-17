@@ -39,6 +39,9 @@ from django.views.decorators.csrf import csrf_exempt
 from ..compat.urls import *
 from .views import Authorize, Redirect, Capture, AccessTokenView
 
+
+app_name = "oauth2"
+
 urlpatterns = [
     url('^authorize/?$',
         login_required(Capture.as_view()),

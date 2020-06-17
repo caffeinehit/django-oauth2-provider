@@ -38,8 +38,8 @@ class Client(models.Model):
 
     Clients are outlined in the :rfc:`2` and its subsections.
     """
-    user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
-        blank=True, null=True)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='oauth2_client', blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
@@ -49,6 +49,10 @@ class Client(models.Model):
 
     def __unicode__(self):
         return self.redirect_uri
+
+    class Meta:
+        app_label = 'oauth2'
+        db_table = 'oauth2_client'
 
 
 class Grant(models.Model):
@@ -67,8 +71,8 @@ class Grant(models.Model):
     * :attr:`redirect_uri`
     * :attr:`scope`
     """
-    user = models.ForeignKey(AUTH_USER_MODEL)
-    client = models.ForeignKey(Client)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
+    client = models.ForeignKey('Client', on_delete=models.CASCADE)
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
@@ -76,6 +80,10 @@ class Grant(models.Model):
 
     def __unicode__(self):
         return self.code
+
+    class Meta:
+        app_label = 'oauth2'
+        db_table = 'oauth2_grant'
 
 
 class AccessToken(models.Model):
@@ -98,9 +106,9 @@ class AccessToken(models.Model):
     * :meth:`get_expire_delta` - returns an integer representing seconds to
         expiry
     """
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     token = models.CharField(max_length=255, default=long_token)
-    client = models.ForeignKey(Client)
+    client = models.ForeignKey('Client', on_delete=models.CASCADE)
     expires = models.DateTimeField(default=get_token_expiry)
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
@@ -109,6 +117,10 @@ class AccessToken(models.Model):
 
     def __unicode__(self):
         return self.token
+
+    class Meta:
+        app_label = 'oauth2'
+        db_table = 'oauth2_accesstoken'
 
     def get_expire_delta(self, reference=None):
         """
@@ -147,12 +159,16 @@ class RefreshToken(models.Model):
     * :attr:`client` - :class:`Client`
     * :attr:`expired` - ``boolean``
     """
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     token = models.CharField(max_length=255, default=long_token)
-    access_token = models.OneToOneField(AccessToken,
-            related_name='refresh_token')
-    client = models.ForeignKey(Client)
+    access_token = models.OneToOneField('AccessToken', on_delete=models.CASCADE,
+        related_name='refresh_token')
+    client = models.ForeignKey('Client', on_delete=models.CASCADE)
     expired = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.token
+
+    class Meta:
+        app_label = 'oauth2'
+        db_table = 'oauth2_refreshtoken'

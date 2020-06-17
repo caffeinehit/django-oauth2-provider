@@ -1,18 +1,17 @@
 from __future__ import absolute_import
 
-import codecs
+import base64
 
 import json
 from six.moves import urllib
 import datetime
 from django.http import QueryDict
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.html import escape
 from django.test import TestCase
 from django.contrib.auth.models import User
 from .. import constants, scope
-from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
@@ -21,7 +20,6 @@ from .backends import BasicClientBackend, RequestParamsClientBackend
 from .backends import AccessTokenBackend
 
 
-@skipIfCustomUser
 class BaseOAuth2TestCase(TestCase):
     def login(self):
         self.client.login(username='test-user-1', password='test')
@@ -52,14 +50,17 @@ class BaseOAuth2TestCase(TestCase):
 
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
-            url_func = lambda: self.auth_url() + '?client_id=%s&response_type=code&state=abc' % self.get_client().client_id
+            def url_func():
+                return self.auth_url() + '?client_id={}&response_type=code&state=abc'.format(
+                    self.get_client().client_id
+                )
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
 
-        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': constants.SCOPES[0][1]})
+        response = self.client.post(self.auth_url2(), {'authorize': True, 'scope': 'read'})
         self.assertEqual(302, response.status_code, response.content)
-        self.assertTrue(self.redirect_url() in response['Location'])
+        self.assertIn(self.redirect_url(), response['Location'])
 
 
 class AuthorizationTest(BaseOAuth2TestCase):
@@ -93,7 +94,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("An unauthorized client tried to access your resources." in response.content)
+        self.assertTrue("An unauthorized client tried to access your resources." in response.content.decode('utf8'))
 
     def test_authorization_rejects_invalid_client_id(self):
         self.login()
@@ -101,7 +102,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("An unauthorized client tried to access your resources." in response.content)
+        self.assertTrue("An unauthorized client tried to access your resources." in response.content.decode('utf8'))
 
     def test_authorization_requires_response_type(self):
         self.login()
@@ -109,7 +110,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"No 'response_type' supplied.") in response.content)
+        self.assertTrue(escape(u"No 'response_type' supplied.") in response.content.decode('utf8'))
 
     def test_authorization_requires_supported_response_type(self):
         self.login()
@@ -117,7 +118,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
+        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content.decode('utf8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
         response = self.client.get(self.auth_url2())
@@ -136,7 +137,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
+        self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content.decode('utf8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
             self.get_client().client_id,
@@ -152,7 +153,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content)
+        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content.decode('utf8'))
 
         response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
             self.get_client().client_id,
@@ -167,7 +168,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url2())
 
         response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0][1]})
-        self.assertEqual(302, response.status_code, response.content)
+        self.assertEqual(302, response.status_code, response.content.decode('utf8'))
         self.assertTrue(self.redirect_url() in response['Location'])
 
         response = self.client.get(self.redirect_url())
@@ -221,7 +222,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
             'client_id': self.get_client().client_id + '123',
             'client_secret': self.get_client().client_secret, })
 
-        self.assertEqual(400, response.status_code, response.content)
+        self.assertEqual(400, response.status_code, response.content.decode('utf8'))
         self.assertEqual('invalid_client', json.loads(response.content)['error'])
 
     def test_fetching_access_token_with_invalid_grant(self):
@@ -234,7 +235,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
             'client_secret': self.get_client().client_secret,
             'code': '123'})
 
-        self.assertEqual(400, response.status_code, response.content)
+        self.assertEqual(400, response.status_code, response.content.decode('utf8'))
         self.assertEqual('invalid_grant', json.loads(response.content)['error'])
 
     def _login_authorize_get_token(self):
@@ -366,14 +367,9 @@ class AuthBackendTest(BaseOAuth2TestCase):
 
     def test_basic_client_backend(self):
         request = type('Request', (object,), {'META': {}})()
-        request.META['HTTP_AUTHORIZATION'] = \
-            codecs.decode(
-                "Basic " + "{0}:{1}".format(
-                    self.get_client().client_id,
-                    self.get_client().client_secret
-                ),
-                'base64'
-        )
+        username_password = "%s:%s" % (self.get_client().client_id, self.get_client().client_secret)
+        username_password_enc = base64.b64encode(username_password.encode()).decode()
+        request.META['HTTP_AUTHORIZATION'] = "Basic %s" % username_password_enc
         self.assertEqual(BasicClientBackend().authenticate(request).id,
                          2, "Didn't return the right client.")
 
@@ -412,13 +408,13 @@ class EnforceSecureTest(BaseOAuth2TestCase):
         response = self.client.get(self.auth_url())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("A secure connection is required." in response.content)
+        self.assertTrue("A secure connection is required." in response.content.decode('utf8'))
 
     def test_access_token_enforces_SSL(self):
         response = self.client.post(self.access_token_url(), {})
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue("A secure connection is required." in response.content)
+        self.assertTrue("A secure connection is required." in response.content.decode('utf8'))
 
 
 class ClientFormTest(TestCase):
