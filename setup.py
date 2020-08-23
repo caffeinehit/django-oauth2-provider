@@ -11,7 +11,7 @@ setup(
     author='Shaun Kruger',
     author_email='shaun.kruger@gmail.com',
     url = 'https://github.com/stormsherpa/django-oauth2-provider',
-    packages= find_packages(exclude=('tests*',)),
+    packages=find_packages(exclude=('tests*',)),
     license='The MIT License: http://www.opensource.org/licenses/mit-license.php',
     platforms='all',
     classifiers=[
