@@ -1,7 +1,7 @@
 import base64
 import json
 import datetime
-from six.moves.urllib_parse import urlparse, parse_qs
+from six.moves.urllib_parse import urlparse, parse_qs, quote
 
 from unittest import SkipTest
 from django.http import QueryDict
@@ -15,7 +15,7 @@ from provider.compat import skipIfCustomUser
 from provider.templatetags.scope import scopes
 from provider.utils import now as date_now
 from provider.oauth2.forms import ClientForm
-from provider.oauth2.models import Client, Grant, AccessToken, RefreshToken
+from provider.oauth2.models import Client, Grant, AccessToken, RefreshToken, AuthorizedClient
 from provider.oauth2.backends import BasicClientBackend, RequestParamsClientBackend
 from provider.oauth2.backends import AccessTokenBackend
 
@@ -39,6 +39,9 @@ class BaseOAuth2TestCase(TestCase):
 
     def get_client(self):
         return Client.objects.get(id=2)
+
+    def get_public_client(self):
+        return Client.objects.get(id=3)
 
     def get_grant(self):
         return Grant.objects.all()[0]
@@ -244,6 +247,55 @@ class AccessTokenTest(BaseOAuth2TestCase):
         self.assertEqual(400, response.status_code, response.content)
         # self.assertEqual('invalid_grant', json.loads(response.content)['error'])
 
+    def test_authorize_once(self):
+        state = 'abc'
+        def url_func():
+            return self.auth_url() + '?client_id={}&response_type=code&state={}'.format(
+                self.get_client().client_id,
+                state,
+            )
+
+        self.login()
+        self._login_and_authorize(url_func)
+        authorized_client = AuthorizedClient.objects.get()
+
+        state = 'def'
+        response = self.client.get(url_func())
+        self.assertNotEqual(response.url, "/oauth2/authorize/confirm")
+
+    def test_authorize_every_time(self):
+        state = 'abc'
+        def url_func():
+            return self.auth_url() + '?client_id={}&response_type=code&state={}'.format(
+                self.get_public_client().client_id,
+                state,
+            )
+
+        self.login()
+        self._login_and_authorize(url_func)
+
+        state = 'def'
+        response = self.client.get(url_func())
+        self.assertEqual(response.url, "/oauth2/authorize/confirm")
+
+    def test_authorize_additional_scope(self):
+        state = 'abc'
+        scopes = 'basic'
+        def url_func():
+            return self.auth_url() + '?client_id={}&response_type=code&state={}&scope={}'.format(
+                self.get_public_client().client_id,
+                state,
+                quote(scopes),
+            )
+
+        self.login()
+        self._login_and_authorize(url_func)
+
+        state = 'def'
+        scopes = 'basic advanced'
+        response = self.client.get(url_func())
+        self.assertEqual(response.url, "/oauth2/authorize/confirm")
+
     def _login_authorize_get_token(self):
         required_props = ['access_token', 'token_type']
 
@@ -304,6 +356,32 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         self.assertEqual(400, response.status_code)
         # self.assertEqual('invalid_grant', json.loads(response.content)['error'])
+
+    def test_access_token_native_client(self):
+        def url_func():
+            return self.auth_url() + '?client_id={}&response_type=code&state=abc'.format(
+                self.get_public_client().client_id
+            )
+
+        self.login()
+        self._login_and_authorize(url_func)
+
+        self.assertEqual(self.get_public_client().client_type, constants.PUBLIC)
+
+        response = self.client.get(self.redirect_url())
+        query = QueryDict(urlparse(response['Location']).query)
+        code = query['code']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'authorization_code',
+            'client_id': self.get_public_client().client_id,
+            'code': code})
+
+        self.assertEqual(200, response.status_code, response.content)
+
+        token_response = json.loads(response.content)
+
+        self.assertNotIn('refresh_token', token_response)
 
     def test_escalating_the_scope(self):
         self.login()

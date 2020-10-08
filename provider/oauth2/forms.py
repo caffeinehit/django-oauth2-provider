@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.auth import authenticate
 from django.conf import settings
 from django.utils.translation import ugettext as _
+from django.utils import timezone
 from provider.constants import RESPONSE_TYPE_CHOICES, SCOPES, PUBLIC
 from provider.forms import OAuthForm, OAuthValidationError
 from provider.utils import now
@@ -298,8 +299,48 @@ class PublicPasswordGrantForm(PasswordGrantForm):
         except Client.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_client'})
 
-        if client.client_type != PUBLIC: # public
+        if client.client_type != PUBLIC:
             raise OAuthValidationError({'error': 'invalid_client'})
 
         data['client'] = client
+        return data
+
+
+class PublicClientForm(OAuthForm):
+    client_id = forms.CharField(required=True)
+    grant_type = forms.CharField(required=True)
+    code = forms.CharField(required=True)
+    redirect_uri = forms.CharField(required=False)
+
+    def clean_grant_type(self):
+        grant_type = self.cleaned_data.get('grant_type')
+
+        if grant_type != 'authorization_code':
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        return grant_type
+
+    def clean(self):
+        data = super().clean()
+        try:
+            client = Client.objects.get(
+                client_id=data.get('client_id'),
+                client_type=PUBLIC,
+                allow_public_token=True,
+            )
+        except Client.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_client'})
+        now = timezone.now()
+        try:
+            grant = Grant.objects.get(
+                client=client,
+                code=data['code'],
+                redirect_uri=data.get('redirect_uri'),
+                expires__gt=now,
+            )
+        except Grant.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        data['client'] = client
+        data['grant'] = grant
         return data

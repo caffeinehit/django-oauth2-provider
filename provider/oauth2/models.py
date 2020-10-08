@@ -39,6 +39,9 @@ class Client(models.Model):
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
     auto_authorize = models.BooleanField(default=False, blank=True)
+    authorize_every_time = models.BooleanField(default=False, blank=True)
+    allow_public_token = models.BooleanField(default=False, blank=True,
+                                             help_text="Allow public client tokens with only client_id and code")
 
     def __unicode__(self):
         return self.redirect_uri
