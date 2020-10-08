@@ -98,6 +98,8 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.SHA1PasswordHasher', # Used by unit tests
 ]
 
+USE_TZ = True
+
 # Use DiscoverRunner on Django 1.7 and above
 if DJANGO_VERSION[0] == 1 and DJANGO_VERSION[1] >= 7:
     TEST_RUNNER = 'django.test.runner.DiscoverRunner'
