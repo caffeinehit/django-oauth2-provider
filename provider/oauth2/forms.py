@@ -55,6 +55,11 @@ class ScopeModelChoiceField(forms.ModelMultipleChoiceField):
     def to_python(self, value):
         if isinstance(value, string_types):
             return [s for s in value.split(' ') if s != '']
+        elif isinstance(value, list):
+            value_list = list()
+            for item in value:
+                value_list.extend(self.to_python(item))
+            return value_list
         else:
             return value
 
@@ -330,14 +335,23 @@ class PublicClientForm(OAuthForm):
             )
         except Client.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_client'})
-        now = timezone.now()
+        now = timezone.now().astimezone(timezone.get_current_timezone())
         try:
+            redirect_uri = data.get('redirect_uri')
             grant = Grant.objects.get(
                 client=client,
                 code=data['code'],
-                redirect_uri=data.get('redirect_uri'),
-                expires__gt=now,
             )
+            if grant.redirect_uri and grant.redirect_uri != data.get('redirect_uri'):
+                raise OAuthValidationError({
+                    'error': 'invalid_grant',
+                    'debug': f'redirect_uri: {redirect_uri}',
+                })
+            if grant.expires < now:
+                raise OAuthValidationError({
+                    'error': 'invalid_grant',
+                    'debug': f'expries: {grant.expires}, now: {now}',
+                })
         except Grant.DoesNotExist:
             raise OAuthValidationError({'error': 'invalid_grant'})
 

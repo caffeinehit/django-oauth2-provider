@@ -19,20 +19,6 @@ class CaptureView(CaptureViewBase):
         return set(scope_list).issubset(scopes)
 
     def get_redirect_url(self, request):
-        client_id = request.GET.get('client_id')
-        try:
-            client = models.Client.objects.get(client_id=client_id)
-            if not client.authorize_every_time:
-                authorized = models.AuthorizedClient.objects.get(client__client_id=client_id)
-
-                requested_scopes = {s for s in
-                              request.GET.get('scope', '').split(' ') if s != ''}
-                authorized_scopes = set(authorized.scope.values_list('name', flat=True))
-                if requested_scopes.issubset(authorized_scopes):
-                    return reverse('oauth2:redirect')
-        except (models.AuthorizedClient.DoesNotExist, models.Client.DoesNotExist):
-            pass
-
         return reverse('oauth2:authorize')
 
 
@@ -56,9 +42,12 @@ class AuthorizeView(AuthorizeViewBase):
         return reverse('oauth2:redirect')
 
     def has_authorization(self, request, client, scope_list):
-        authclient_mgr = models.AuthorizedClient.objects
         if client.auto_authorize:
             return True
+        if client.authorize_every_time:
+            return False
+
+        authclient_mgr = models.AuthorizedClient.objects
         auth = authclient_mgr.check_authorization_scope(request.user,
                                                         client,
                                                         scope_list)

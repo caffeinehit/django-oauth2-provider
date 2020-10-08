@@ -261,7 +261,10 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         state = 'def'
         response = self.client.get(url_func())
-        self.assertNotEqual(response.url, "/oauth2/authorize/confirm")
+        self.assertEqual(response.url, "/oauth2/authorize/confirm")
+
+        confirm_response = self.client.get(response.url)
+        self.assertEqual(confirm_response.status_code, 302)
 
     def test_authorize_every_time(self):
         state = 'abc'
