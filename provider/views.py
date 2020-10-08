@@ -519,8 +519,15 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
                 client)
         at = self.create_access_token(request, grant.user,
                                       list(grant.scope.all()), client)
-        rt = self.create_refresh_token(request, grant.user,
-                                       list(grant.scope.all()), at, client)
+
+        suppress_refresh_token = False
+        if client.client_type == constants.PUBLIC and client.allow_public_token:
+            if not request.POST.get('client_secret'):
+                suppress_refresh_token = True
+
+        if not suppress_refresh_token:
+            rt = self.create_refresh_token(request, grant.user,
+                                           list(grant.scope.all()), at, client)
 
         self.invalidate_grant(grant)
 

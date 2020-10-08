@@ -19,6 +19,20 @@ class CaptureView(CaptureViewBase):
         return set(scope_list).issubset(scopes)
 
     def get_redirect_url(self, request):
+        client_id = request.GET.get('client_id')
+        try:
+            client = models.Client.objects.get(client_id=client_id)
+            if not client.authorize_every_time:
+                authorized = models.AuthorizedClient.objects.get(client__client_id=client_id)
+
+                requested_scopes = {s for s in
+                              request.GET.get('scope', '').split(' ') if s != ''}
+                authorized_scopes = set(authorized.scope.values_list('name', flat=True))
+                if requested_scopes.issubset(authorized_scopes):
+                    return reverse('oauth2:redirect')
+        except (models.AuthorizedClient.DoesNotExist, models.Client.DoesNotExist):
+            pass
+
         return reverse('oauth2:authorize')
 
 
@@ -57,7 +71,7 @@ class AuthorizeView(AuthorizeViewBase):
                                                                 client,
                                                                 scope_list)
 
-        grant = form.save(user = request.user,
+        grant = form.save(user=request.user,
                           client=client,
                           redirect_uri=client_data.get('redirect_uri', ''))
 
@@ -91,6 +105,7 @@ class AccessTokenView(AccessTokenViewBase):
         backends.BasicClientBackend,
         backends.RequestParamsClientBackend,
         backends.PublicPasswordBackend,
+        backends.PublicClientBackend,
     )
 
     def get_authorization_code_grant(self, request, data, client):
