@@ -10,7 +10,7 @@
         }, 
         "model": "oauth2.client", 
         "pk": 1
-    }, 
+    },
     {
         "fields": {
             "redirect_uri": "http://example.com/application/2/", 
@@ -23,6 +23,20 @@
         "model": "oauth2.client", 
         "pk": 2
     }, 
+    {
+        "fields": {
+            "redirect_uri": "http://example.com/application/3/",
+            "client_id": "185f88c440a24e561edf",
+            "client_secret": "717e8326751f05f7f1f9354c495152c8d7c7a0d4",
+            "client_type": 1,
+            "url": "http://example.com/",
+            "user": 2,
+            "allow_public_token": true,
+            "authorize_every_time": true
+        },
+        "model": "oauth2.client",
+        "pk": 3
+    },
     {
         "fields": {
             "date_joined": "2012-01-23 05:44:17", 
@@ -57,6 +71,22 @@
             "username": "test-user-2"
         }, 
         "model": "auth.user", 
+        "pk": 2
+    },
+    {
+        "fields": {
+            "name": "basic",
+            "description": "A basic scope"
+        },
+        "model": "oauth2.scope",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "name": "advanced",
+            "description": "An advanced scope"
+        },
+        "model": "oauth2.scope",
         "pk": 2
     }
 ]

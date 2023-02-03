@@ -1,14 +1,7 @@
+dist: focal
+sudo: false
 language: python
-env:
-  - DJANGO="django>=1.4,<1.5"
-  - DJANGO="django>=1.5,<1.6"
-  - DJANGO="django>=1.6,<1.7"
 python:
-  - "2.6"
-  - "2.7"
-# command to install dependencies
-install:
-    - pip install -q -r requirements.txt --use-mirrors
-    - pip install -q $DJANGO --use-mirrors -U
-    - python setup.py develop
-script: ./test.sh
+  - "3.8"
+install: pip install tox-travis
+script: tox

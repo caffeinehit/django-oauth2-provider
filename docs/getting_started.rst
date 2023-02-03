@@ -6,7 +6,7 @@ Installation
 
 .. sourcecode:: sh
 
-    $ pip install django-oauth2-provider
+    $ pip install django-oauth2
 
 Configuration
 #############
@@ -92,5 +92,32 @@ in :rfc:`4`.
 .. note:: Remember that you should always use HTTPS for all your OAuth
 	  2 requests otherwise you won't be secured. 
 
+Integrate with Django Authentication
+####################################
+
+Add OAuth2 Middleware to :attr:`MIDDLEWARE_CLASSES`
+---------------------------------------------------
+
+::
+
+    MIDDLEWARE_CLASSES = (
+    ...
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'provider.oauth2.middleware.Oauth2UserMiddleware',
+    ...
+    )
+
+Add RemoteUserBackend to :attr:`AUTHENTICATION_BACKENDS`
+--------------------------------------------------------
+
+::
+
+    AUTHENTICATION_BACKENDS = (
+        'django.contrib.auth.backends.ModelBackend',
+        'django.contrib.auth.backends.RemoteUserBackend',
+    )
 
 
+.. note:: The Oauth2UserMiddleware class reuses functionality used by the
+	  RemoteUserMiddleware class.  Omitting the RemoteUserBackend
+	  will result in 500 errors.

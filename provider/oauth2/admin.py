@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import AccessToken, Grant, Client, RefreshToken
+from provider.oauth2 import models
 
 
 class AccessTokenAdmin(admin.ModelAdmin):
-    list_display = ('user', 'client', 'token', 'expires', 'scope',)
+    list_display = ('user', 'client', 'token', 'expires',)
     raw_id_fields = ('user',)
 
 
@@ -13,10 +13,19 @@ class GrantAdmin(admin.ModelAdmin):
 
 
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('url', 'user', 'redirect_uri', 'client_id', 'client_type')
+    list_display = ('url', 'user', 'redirect_uri', 'client_id',
+                    'client_type', 'auto_authorize')
     raw_id_fields = ('user',)
 
-admin.site.register(AccessToken, AccessTokenAdmin)
-admin.site.register(Grant, GrantAdmin)
-admin.site.register(Client, ClientAdmin)
-admin.site.register(RefreshToken)
+
+class AuthorizedClientAdmin(admin.ModelAdmin):
+    list_display = ('user', 'client', 'authorized_at')
+    raw_id_fields = ('user',)
+
+
+admin.site.register(models.AccessToken, AccessTokenAdmin)
+admin.site.register(models.Grant, GrantAdmin)
+admin.site.register(models.Client, ClientAdmin)
+admin.site.register(models.AuthorizedClient, AuthorizedClientAdmin)
+admin.site.register(models.RefreshToken)
+admin.site.register(models.Scope)

@@ -7,6 +7,7 @@ Scopes can be combined, such as ``"read write"``. Note that a single
 
 See :class:`provider.scope.to_int` on how scopes are combined.
 """
+from functools import reduce
 
 from .constants import SCOPES
 
@@ -73,7 +74,7 @@ def to_names(scope):
     """
     return [
         name
-        for (name, value) in SCOPE_NAME_DICT.iteritems()
+        for (name, value) in SCOPE_NAME_DICT.items()
         if check(value, scope)
     ]
 

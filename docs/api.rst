@@ -62,14 +62,6 @@
     Session key prefix to store temporary data while the user is completing
     the authentication / authorization process.
 
-.. attribute:: SINGLE_ACCESS_TOKEN
-
-    :settings: `OAUTH_SINGLE_ACCESS_TOKEN`
-    :default: `False`
-
-    To have the provider only create and retrieve one access token per
-    user/client/scope combination, set to `True`.
-
 `provider.forms`
 ----------------
 .. automodule:: provider.forms
