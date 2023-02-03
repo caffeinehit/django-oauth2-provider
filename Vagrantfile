@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "ubuntu/bionic64"
+  config.vm.box = "ubuntu/focal64"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -67,9 +67,9 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
     sudo resize2fs /dev/sda1
     sudo apt-get update
-    sudo apt-get install -y build-essential python-dev python-pip python-virtualenv python3-dev python3 python3-virtualenv virtualenv virtualenvwrapper postgresql libpq-dev memcached redis-server redis-tools
+    sudo apt-get install -y build-essential python3-dev python3-pip python3-dev python3 python3-virtualenv virtualenv virtualenvwrapper postgresql libpq-dev memcached redis-server redis-tools
 
-    sudo -H pip install tox
+    sudo -H pip3 install tox==3.28.0 virtualenv
 
     echo "export TOX_WORK_DIR=/tmp/" >> ~/.bash_aliases
 
