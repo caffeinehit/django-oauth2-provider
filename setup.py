@@ -23,9 +23,9 @@ setup(
         'Framework :: Django',
     ],
     install_requires=[
-        "shortuuid>=0.4",
-        "six>=0.11.0",
-        "sqlparse>=0.2.4",
+        "shortuuid>=1.0.11",
+        "six>=0.16.0",
+        "sqlparse>=0.4.3",
     ],
     include_package_data=True,
     zip_safe=False,
