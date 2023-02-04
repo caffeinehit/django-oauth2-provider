@@ -6,7 +6,7 @@ from six.moves.urllib_parse import urlparse, ParseResult
 
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.views.generic.base import TemplateView, View
 from django.core.exceptions import ObjectDoesNotExist
 from provider.oauth2.models import Client, Scope

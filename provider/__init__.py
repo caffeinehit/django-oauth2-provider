@@ -1,1 +1,2 @@
-__version__ = "3.2"
+__version__ = "4.0"
+# The major version is expected to follow the current django major version:q
