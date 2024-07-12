@@ -485,10 +485,11 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
         return HttpResponse(json.dumps(error), content_type=mimetype,
                 status=status, **kwargs)
 
-    def access_token_response(self, access_token):
+    def access_token_response_data(self, access_token):
         """
-        Returns a successful response after creating the access token
-        as defined in :rfc:`5.1`.
+        Returns access token data as defined in :rfc:`5.1`.
+
+        Derived classes can override to add extra parameters.
         """
 
         response_data = {
@@ -505,6 +506,15 @@ class AccessTokenViewBase(AuthUtilMixin, TemplateView):
             response_data['refresh_token'] = rt.token
         except ObjectDoesNotExist:
             pass
+
+        return response_data
+
+    def access_token_response(self, access_token):
+        """
+        Returns a successful response after creating the access token
+        as defined in :rfc:`5.1`.
+        """
+        response_data = self.access_token_response_data(access_token)
 
         return HttpResponse(
             json.dumps(response_data), content_type='application/json'
