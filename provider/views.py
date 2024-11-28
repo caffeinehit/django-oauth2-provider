@@ -341,7 +341,7 @@ class RedirectViewBase(AuthUtilMixin, View):
 
         parsed = urlparse(redirect_uri)
 
-        query = QueryDict('', mutable=True)
+        query = QueryDict(parsed[4], mutable=True)
 
         if 'state' in data:
             query['state'] = data['state']
