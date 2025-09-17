@@ -3,10 +3,12 @@ from django.conf import settings
 
 CONFIDENTIAL = 0
 PUBLIC = 1
+PKCE = 2
 
 CLIENT_TYPES = (
     (CONFIDENTIAL, "Confidential (Web applications)"),
-    (PUBLIC, "Public (Native and JS applications)")
+    (PUBLIC, "Public (Native and JS applications)"),
+    (PKCE, "RFC7636 PKCE (Native, JS, and Web applications)"),
 )
 
 RESPONSE_TYPE_CHOICES = getattr(settings, 'OAUTH_RESPONSE_TYPE_CHOICES', ("code", "token"))

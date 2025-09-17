@@ -1,0 +1,24 @@
+
+services:
+  test:
+    build:
+      context: .
+      target: dev
+    user: ${UID}
+    volumes:
+      - ${WORKSPACE:-.}:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=tests.settings
+
+  web:
+    build:
+      context: .
+      target: dev
+    user: ${UID}
+    volumes:
+      - ${WORKSPACE:-.}:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=tests.settings
+#    entrypoint: [ "python3", "manage.py", "runserver" ]

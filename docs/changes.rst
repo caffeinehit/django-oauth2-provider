@@ -1,3 +1,12 @@
+v 4.1
+-----
+* Add aws_identity grant_type
+* Update for Django 3.1-4.2
+
+v 4.0
+-----
+* Update for Django 3.0-4.1
+
 v 2.4
 -----
 * Add HTTP Authorization Bearer token support to Oauth2UserMiddleware

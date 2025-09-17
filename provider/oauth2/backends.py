@@ -1,11 +1,11 @@
 import base64
 
 from provider.utils import now
-from provider.oauth2.forms import ClientAuthForm, PublicPasswordGrantForm, PublicClientForm
+from provider.oauth2.forms import ClientAuthForm, PublicPasswordGrantForm, PublicClientForm, PkceClientAuthForm
 from provider.oauth2.models import AccessToken
 
 
-class BaseBackend(object):
+class BaseBackend:
     """
     Base backend used to authenticate clients as defined in :rfc:`1` against
     our database.
@@ -18,7 +18,7 @@ class BaseBackend(object):
         pass
 
 
-class BasicClientBackend(object):
+class BasicClientBackend:
     """
     Backend that tries to authenticate a client through HTTP authorization
     headers as defined in :rfc:`2.3.1`.
@@ -47,7 +47,7 @@ class BasicClientBackend(object):
             return None
 
 
-class RequestParamsClientBackend(object):
+class RequestParamsClientBackend:
     """
     Backend that tries to authenticate a client through request parameters
     which might be in the request body or URI as defined in :rfc:`2.3.1`.
@@ -68,7 +68,24 @@ class RequestParamsClientBackend(object):
         return None
 
 
-class PublicPasswordBackend(object):
+class PkceRequestParamsClientBackend:
+    def authenticate(self, request=None):
+        if request is None:
+            return None
+
+        if hasattr(request, 'REQUEST'):
+            args = request.REQUEST
+        else:
+            args = request.POST or request.GET
+        form = PkceClientAuthForm(args)
+
+        if form.is_valid():
+            return form.cleaned_data.get('client')
+
+        return None
+
+
+class PublicPasswordBackend:
     """
     Backend that tries to authenticate a client using username, password
     and client ID. This is only available in specific circumstances:
@@ -93,7 +110,7 @@ class PublicPasswordBackend(object):
         return None
 
 
-class PublicClientBackend(object):
+class PublicClientBackend:
     def authenticate(self, request=None):
         if request is None:
             return None
@@ -110,7 +127,7 @@ class PublicClientBackend(object):
         return None
 
 
-class AccessTokenBackend(object):
+class AccessTokenBackend:
     """
     Authenticate a user via access token and client object.
     """

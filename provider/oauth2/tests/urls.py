@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 from django.http.response import JsonResponse
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -37,6 +37,6 @@ class BadScopeView(OAuthRequiredMixin, LoginRequiredMixin, View):
 
 
 urlpatterns = [
-    url('^badscope$', BadScopeView.as_view(), name='badscope'),
-    url('^user/(?P<pk>\d+)$', UserView.as_view(), name='user'),
+    path('badscope', BadScopeView.as_view(), name='badscope'),
+    path('user/<int:pk>', UserView.as_view(), name='user'),
 ]

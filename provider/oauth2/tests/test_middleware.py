@@ -1,5 +1,5 @@
 import json
-from six.moves.urllib_parse import urlparse
+from urllib.parse import urlparse
 
 from django.shortcuts import reverse
 from django.http import QueryDict

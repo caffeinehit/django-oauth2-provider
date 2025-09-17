@@ -35,7 +35,7 @@ Add :attr:`provider.oauth2.urls` to your root ``urls.py`` file.
 
 ::
 
-    url(r'^oauth2/', include('provider.oauth2.urls', namespace = 'oauth2')),
+    path('oauth2/', include(('provider.oauth2.urls', 'oauth2'))),
     
     
 .. note:: The namespace argument is required.    
@@ -91,6 +91,27 @@ in :rfc:`4`.
 
 .. note:: Remember that you should always use HTTPS for all your OAuth
 	  2 requests otherwise you won't be secured. 
+
+Request an Access Token using AWS credentials
+---------------------------------------------
+
+The new aws_identity grant_type uses the parameters for a signed GetCallerIdentity
+request to prove the caller's identity.
+
+Your client needs to submit a :attr:`POST` request to
+:attr:`/oauth2/access_token` including the following parameters:
+
+* ``region`` - AWS Region
+* ``post_body`` - The post body used for signing the request. Usually ``Action=GetCallerIdentity&Version=2011-06-15``
+* ``headers_json`` - The headers produced by the AWSv4 signing process
+
+The region value is used to produce the standard https://sts.(region).amazonaws.com/ url used to
+make the GetCallerIdentity request. The URL is generated server side to reduce the risk of an
+attack based on sending an improperly crafted full URL.
+
+The aws-v4-signature library implements awsv4sign.generate_http11_header(). An example is
+presented in the root of the repository in aws_identity_examply.py.
+
 
 Integrate with Django Authentication
 ####################################

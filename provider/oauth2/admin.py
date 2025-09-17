@@ -23,9 +23,15 @@ class AuthorizedClientAdmin(admin.ModelAdmin):
     raw_id_fields = ('user',)
 
 
+class AwsAccountAdmin(admin.ModelAdmin):
+    list_display = ('arn', 'client', 'max_token_lifetime')
+    raw_id_fields = ('acting_user',)
+
+
 admin.site.register(models.AccessToken, AccessTokenAdmin)
 admin.site.register(models.Grant, GrantAdmin)
 admin.site.register(models.Client, ClientAdmin)
 admin.site.register(models.AuthorizedClient, AuthorizedClientAdmin)
+admin.site.register(models.AwsAccount, AwsAccountAdmin)
 admin.site.register(models.RefreshToken)
 admin.site.register(models.Scope)

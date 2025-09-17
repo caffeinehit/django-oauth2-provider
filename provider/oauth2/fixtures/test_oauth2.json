@@ -39,6 +39,38 @@
     },
     {
         "fields": {
+            "redirect_uri": "http://example.com/application/4/",
+            "client_id": "d6d7369c815d6d22e3dd",
+            "client_secret": "ebb3b29293b87b72306b71b2899672b76dc8735b",
+            "client_type": 2,
+            "url": "http://example.com/",
+            "user": 2,
+            "auto_authorize": true,
+            "allow_public_token": true,
+            "authorize_every_time": false,
+            "allow_plain_pkce": false
+        },
+        "model": "oauth2.client",
+        "pk": 4
+    },
+    {
+        "fields": {
+            "redirect_uri": "http://example.com/application/5/",
+            "client_id": "3d3f0f3a05923de9d840",
+            "client_secret": "df3cb008dd5ec208be023472556906c91e50be60",
+            "client_type": 2,
+            "url": "http://example.com/",
+            "user": 2,
+            "auto_authorize": true,
+            "allow_public_token": true,
+            "authorize_every_time": false,
+            "allow_plain_pkce": true
+        },
+        "model": "oauth2.client",
+        "pk": 5
+    },
+    {
+        "fields": {
             "date_joined": "2012-01-23 05:44:17", 
             "email": "test-1@example.com", 
             "first_name": "", 
@@ -75,6 +107,24 @@
     },
     {
         "fields": {
+            "date_joined": "2012-01-23 05:53:31",
+            "email": "",
+            "first_name": "",
+            "groups": [],
+            "is_active": true,
+            "is_staff": false,
+            "is_superuser": false,
+            "last_login": "2012-01-23 05:53:31",
+            "last_name": "",
+            "password": "sha1$0cf1b$d66589690edd96b410170fcae5cc2bdfb68821e7",
+            "user_permissions": [],
+            "username": "test-user-aws"
+        },
+        "model": "auth.user",
+        "pk": 3
+    },
+    {
+        "fields": {
             "name": "basic",
             "description": "A basic scope"
         },
@@ -88,5 +138,19 @@
         },
         "model": "oauth2.scope",
         "pk": 2
+    },
+    {
+        "fields": {
+            "arn": "arn:aws:iam::123456789012:role/testrole",
+            "account_id": "123456789012",
+            "name": "testrole",
+            "general_type": "role",
+            "client": 2,
+            "autoprovision_user": false,
+            "acting_user": 3,
+            "scope": ["basic", "advanced"]
+        },
+        "model": "oauth2.awsaccount",
+        "pk": 1
     }
 ]

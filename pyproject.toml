@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "setuptools-git-versioning>=2.0,<3",]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+
+[project]
+name = "django-oauth2"
+dynamic = ["version"]
+description = 'Provide OAuth2 access to your app (fork of django-oauth2-provider)'
+readme = 'README.rst'
+maintainers = [
+    {name="Shaun Kruger", email="shaun.kruger@gmail.com"}
+]
+requires-python = ">=3.8"
+classifiers=[
+    'Environment :: Web Environment',
+    'Intended Audience :: Developers',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Framework :: Django',
+]
+dependencies=[
+    "shortuuid>=1.0.11",
+    "sqlparse>=0.4.3",
+]
+
+[project.urls]
+Homepage = 'https://github.com/stormsherpa/django-oauth2-provider'
+
+
